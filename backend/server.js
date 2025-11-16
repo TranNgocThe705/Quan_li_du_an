@@ -1,0 +1,152 @@
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import morgan from 'morgan';
+import helmet from 'helmet';
+import connectDB from './config/database.js';
+import { notFound, errorHandler } from './middleware/errorHandler.js';
+
+// Import routes
+import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import workspaceRoutes from './routes/workspaceRoutes.js';
+import projectRoutes from './routes/projectRoutes.js';
+import taskRoutes from './routes/taskRoutes.js';
+import commentRoutes from './routes/commentRoutes.js';
+
+// Load environment variables
+dotenv.config();
+
+// Initialize express app
+const app = express();
+
+// Security middleware
+app.use(helmet());
+
+// CORS configuration
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    credentials: true,
+  })
+);
+
+// Body parser middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Logger middleware (only in development)
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
+// Health check endpoint
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Project Management API Server',
+    version: '1.0.0',
+    status: 'Running',
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Server is healthy',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/workspaces', workspaceRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/comments', commentRoutes);
+
+// Error handling middleware
+app.use(notFound);
+app.use(errorHandler);
+
+// Start server
+const PORT = process.env.PORT || 5000;
+
+let server;
+
+const startServer = async () => {
+  try {
+    // Connect to database first
+    await connectDB();
+    
+    // Then start the server
+    server = app.listen(PORT, () => {
+      console.log(`\n🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`🔗 Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}\n`);
+    });
+  } catch (error) {
+    console.error(`❌ Failed to start server: ${error.message}`);
+    console.error('Full error:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error(`\n❌ Unhandled Promise Rejection:`);
+  console.error(`Error: ${err.message}`);
+  console.error(`Stack: ${err.stack}\n`);
+  
+  // Close server & exit process gracefully
+  if (server) {
+    server.close(() => {
+      console.log('Server closed due to unhandled rejection');
+      process.exit(1);
+    });
+  } else {
+    process.exit(1);
+  }
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error(`\n❌ Uncaught Exception:`);
+  console.error(`Error: ${err.message}`);
+  console.error(`Stack: ${err.stack}\n`);
+  
+  // Close server & exit process gracefully
+  if (server) {
+    server.close(() => {
+      console.log('Server closed due to uncaught exception');
+      process.exit(1);
+    });
+  } else {
+    process.exit(1);
+  }
+});
+
+// Handle SIGTERM signal (graceful shutdown)
+process.on('SIGTERM', () => {
+  console.log('\n👋 SIGTERM signal received: closing HTTP server gracefully');
+  if (server) {
+    server.close(() => {
+      console.log('HTTP server closed');
+      process.exit(0);
+    });
+  }
+});
+
+// Handle SIGINT signal (Ctrl+C)
+process.on('SIGINT', () => {
+  console.log('\n👋 SIGINT signal received: closing HTTP server gracefully');
+  if (server) {
+    server.close(() => {
+      console.log('HTTP server closed');
+      process.exit(0);
+    });
+  }
+});
