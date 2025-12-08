@@ -34,8 +34,12 @@ const App = () => {
             <Toaster position="top-right" />
             <Routes>
                 {/* Public routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+                <Route path="/login" element={
+                    token ? <Navigate to="/" replace /> : <Login />
+                } />
+                <Route path="/register" element={
+                    token ? <Navigate to="/" replace /> : <Register />
+                } />
                 <Route path="/auth/google/success" element={<GoogleAuthCallback />} />
                 
                 {/* Protected routes */}
@@ -66,8 +70,8 @@ const App = () => {
                     } 
                 />
 
-                {/* Catch all - redirect to home */}
-                <Route path="*" element={<Navigate to="/" replace />} />
+                {/* Catch all - redirect to login if not authenticated, otherwise home */}
+                <Route path="*" element={<Navigate to={token ? "/" : "/login"} replace />} />
             </Routes>
         </>
     );

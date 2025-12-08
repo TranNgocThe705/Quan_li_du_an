@@ -294,6 +294,12 @@
     "projectsByPriority": "Dự Án Theo Độ Ưu Tiên",
     "tasksTrend": "Xu Hướng Công Việc (7 Ngày)",
     "userGrowth": "Tăng Trưởng Người Dùng (30 Ngày)",
-    "workspaceActivity": "Workspace Hoạt Động Nhiều Nhất"
+    "workspaceActivity": "Workspace Hoạt Động Nhiều Nhất",
+    "exportReport": "Xuất Báo Cáo",
+    "exportExcel": "Xuất Excel",
+    "exportPDF": "Xuất PDF",
+    "exportSuccess": "Xuất báo cáo thành công",
+    "exportError": "Xuất báo cáo thất bại",
+    "downloading": "Đang tải báo cáo..."
   }
 }

@@ -235,12 +235,12 @@ export default function TaskDetails() {
                                 comments.map((comment) => (
                                     <div key={comment._id} className="border-l-4 border-blue-500 bg-zinc-50 dark:bg-zinc-800 p-4 rounded">
                                         <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-2">
-                                                <img 
-                                                    src={comment.userId?.image || 'https://via.placeholder.com/40'} 
+                                                <div className="flex items-center gap-3">
+                                                    <img
+                                                    src={comment.userId?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.userId?.name || 'User')}&background=random&size=40`} 
                                                     alt={comment.userId?.name}
-                                                    className="w-8 h-8 rounded-full"
-                                                />
+                                                    className="w-10 h-10 rounded-full"
+                                                    />
                                                 <div>
                                                     <p className="font-semibold text-sm">{comment.userId?.name}</p>
                                                     <p className="text-xs text-zinc-500 dark:text-zinc-400">

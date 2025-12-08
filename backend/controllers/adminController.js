@@ -5,6 +5,7 @@ import Workspace from '../models/Workspace.js';
 import WorkspaceMember from '../models/WorkspaceMember.js';
 import Project from '../models/Project.js';
 import Task from '../models/Task.js';
+import { generateExcelReport, generatePDFReport } from '../utils/exportUtils.js';
 
 // @desc    Get admin dashboard statistics
 // @route   GET /api/admin/dashboard
@@ -576,4 +577,86 @@ export const getActivityLogs = asyncHandler(async (req, res) => {
     currentPage: page,
     totalLogs: logs.length,
   });
+});
+
+// @desc    Export dashboard report
+// @route   GET /api/admin/export-report
+// @access  Private (System Admin)
+export const exportReport = asyncHandler(async (req, res) => {
+  const { format = 'excel' } = req.query; // format: 'excel' or 'pdf'
+
+  // Get all dashboard data
+  const [totalUsers, totalWorkspaces, totalProjects, totalTasks] = await Promise.all([
+    User.countDocuments(),
+    Workspace.countDocuments(),
+    Project.countDocuments(),
+    Task.countDocuments(),
+  ]);
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const activeUsers = await User.countDocuments({
+    updatedAt: { $gte: thirtyDaysAgo },
+  });
+
+  const projectsByStatus = await Project.aggregate([
+    {
+      $group: {
+        _id: '$status',
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const tasksByStatus = await Task.aggregate([
+    {
+      $group: {
+        _id: '$status',
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const projectsByPriority = await Project.aggregate([
+    {
+      $group: {
+        _id: '$priority',
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const completedTasks = await Task.countDocuments({ status: 'DONE' });
+  const taskCompletionRate = totalTasks > 0 ? ((completedTasks / totalTasks) * 100) : 0;
+
+  const reportData = {
+    totalUsers,
+    totalWorkspaces,
+    totalProjects,
+    totalTasks,
+    activeUsers,
+    completedTasks,
+    taskCompletionRate,
+    projectsByStatus,
+    tasksByStatus,
+    projectsByPriority,
+  };
+
+  if (format === 'pdf') {
+    // Generate PDF
+    const pdfBuffer = await generatePDFReport(reportData);
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=dashboard-report-${Date.now()}.pdf`);
+    res.send(pdfBuffer);
+  } else {
+    // Generate Excel (default)
+    const workbook = await generateExcelReport(reportData);
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=dashboard-report-${Date.now()}.xlsx`);
+    
+    await workbook.xlsx.write(res);
+    res.end();
+  }
 });

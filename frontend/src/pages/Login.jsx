@@ -19,8 +19,8 @@ const Login = () => {
   const handleGoogleSignIn = () => {
     // Redirect to backend Google OAuth endpoint
     console.log('Google Sign-In button clicked!');
-    console.log('Redirecting to:', 'http://localhost:5000/api/auth/google');
-    window.location.href = 'http://localhost:5000/api/auth/google';
+    console.log('Redirecting to:', 'https://backend.enroseze.id.vn/api/auth/google');
+    window.location.href = 'https://backend.enroseze.id.vn/api/auth/google';
   };
 
   const handleSubmit = async (e) => {

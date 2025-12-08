@@ -187,7 +187,7 @@ const ProjectTasks = ({ tasks }) => {
                                                 </td>
                                                 <td className="px-4 py-2">
                                                     <div className="flex items-center gap-2">
-                                                        <img src={task.assigneeId?.image || 'https://via.placeholder.com/40'} className="size-5 rounded-full" alt="avatar" />
+                                                        <img src={task.assigneeId?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.assigneeId?.name || 'User')}&background=random&size=40`} className="size-5 rounded-full" alt="avatar" />
                                                         {task.assigneeId?.name || "-"}
                                                     </div>
                                                 </td>
@@ -246,7 +246,7 @@ const ProjectTasks = ({ tasks }) => {
                                         </div>
 
                                         <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                                            <img src={task.assigneeId?.image || 'https://via.placeholder.com/40'} className="size-5 rounded-full" alt="avatar" />
+                                            <img src={task.assigneeId?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.assigneeId?.name || 'User')}&background=random&size=40`} className="size-5 rounded-full" alt="avatar" />
                                             {task.assigneeId?.name || "-"}
                                         </div>
 

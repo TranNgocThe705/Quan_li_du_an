@@ -12,6 +12,7 @@ import {
   deleteProject,
   getSystemStats,
   getActivityLogs,
+  exportReport,
 } from '../controllers/adminController.js';
 import { protect, isSuperAdmin, isSystemAdmin } from '../middleware/auth.js';
 
@@ -43,5 +44,8 @@ router.get('/stats', isSystemAdmin, getSystemStats);
 
 // Activity logs
 router.get('/logs', isSystemAdmin, getActivityLogs);
+
+// Export report
+router.get('/export-report', isSystemAdmin, exportReport);
 
 export default router;

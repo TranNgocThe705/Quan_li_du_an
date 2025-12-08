@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { Users, Briefcase, CheckSquare, Building2, Activity, LogOut, Globe, UserCog, Trash2, Ban, CheckCircle, Sun, Moon, TrendingUp, TrendingDown } from 'lucide-react';
+import { Users, Briefcase, CheckSquare, Building2, Activity, LogOut, Globe, UserCog, Trash2, Ban, CheckCircle, Sun, Moon, TrendingUp, TrendingDown, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { adminAPI } from '../services/api';
 import { logout } from '../features/authSlice';
@@ -11,6 +11,7 @@ import PieChart from '../components/charts/PieChart';
 import LineChart from '../components/charts/LineChart';
 import BarChart from '../components/charts/BarChart';
 import AreaChart from '../components/charts/AreaChart';
+import { downloadReportFromAPI } from '../utils/exportUtils';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -27,6 +28,38 @@ const AdminDashboard = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [workspacesLoading, setWorkspacesLoading] = useState(false);
   const [projectsLoading, setProjectsLoading] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const exportMenuRef = useRef(null);
+
+  const handleExportReport = async (format) => {
+    try {
+      setExportLoading(true);
+      setShowExportMenu(false);
+      toast.loading(t('admin.downloading'), { id: 'export' });
+      
+      await downloadReportFromAPI(adminAPI.exportReport, format);
+      
+      toast.success(t('admin.exportSuccess'), { id: 'export' });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(t('admin.exportError'), { id: 'export' });
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchDashboardData = async () => {
     try {
@@ -221,6 +254,42 @@ const AdminDashboard = () => {
             
             {/* Actions */}
             <div className="flex items-center gap-3">
+              {/* Export Report Dropdown */}
+              {activeTab === 'dashboard' && (
+                <div className="relative" ref={exportMenuRef}>
+                  <button
+                    onClick={() => setShowExportMenu(!showExportMenu)}
+                    disabled={exportLoading}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={t('admin.exportReport')}
+                  >
+                    <Download className="w-5 h-5" />
+                    <span className="text-sm font-medium">{t('admin.exportReport')}</span>
+                  </button>
+                  
+                  {showExportMenu && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 z-50">
+                      <div className="py-1">
+                        <button
+                          onClick={() => handleExportReport('excel')}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                        >
+                          <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                          <span>{t('admin.exportExcel')}</span>
+                        </button>
+                        <button
+                          onClick={() => handleExportReport('pdf')}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                        >
+                          <FileText className="w-4 h-4 text-red-600" />
+                          <span>{t('admin.exportPDF')}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {/* Theme Toggle */}
               <button
                 onClick={() => dispatch(toggleTheme())}
@@ -249,7 +318,7 @@ const AdminDashboard = () => {
               {/* User Info */}
               <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-gray-100 dark:bg-zinc-700">
                 <img
-                  src={user?.image || 'https://via.placeholder.com/40'}
+                  src={user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=random&size=40`}
                   alt={user?.name}
                   className="w-8 h-8 rounded-full"
                 />
@@ -628,12 +697,12 @@ const AdminDashboard = () => {
                     {users.map((usr) => (
                       <tr key={usr._id}>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <img
-                              src={usr.image || 'https://via.placeholder.com/40'}
+                            <div className="flex items-center gap-2">
+                              <img
+                              src={usr.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(usr.name)}&background=random&size=40`}
                               alt={usr.name}
-                              className="w-10 h-10 rounded-full"
-                            />
+                              className="w-8 h-8 rounded-full"
+                              />
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900 dark:text-white">
                                 {usr.name}

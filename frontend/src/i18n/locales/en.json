@@ -294,6 +294,12 @@
     "projectsByPriority": "Projects by Priority",
     "tasksTrend": "Tasks Trend (7 Days)",
     "userGrowth": "User Growth (30 Days)",
-    "workspaceActivity": "Top Workspaces"
+    "workspaceActivity": "Top Workspaces",
+    "exportReport": "Export Report",
+    "exportExcel": "Export as Excel",
+    "exportPDF": "Export as PDF",
+    "exportSuccess": "Report exported successfully",
+    "exportError": "Failed to export report",
+    "downloading": "Downloading report..."
   }
 }

@@ -15,19 +15,27 @@ const resources = {
   }
 };
 
+// Khởi tạo ngôn ngữ từ localStorage hoặc mặc định
+const savedLanguage = localStorage.getItem('language') || 'vi';
+
+// Khởi tạo i18n ĐỒNG BỘ
 i18n
+  .use(initReactI18next) // Pass i18n instance to react-i18next
   .use(LanguageDetector)
-  .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: 'en',
-    lng: localStorage.getItem('language') || 'en',
-    debug: false,
+    fallbackLng: 'vi',
+    lng: savedLanguage,
+    debug: false, // Tắt debug để tránh warning
     interpolation: {
       escapeValue: false
     },
     react: {
-      useSuspense: false
+      useSuspense: false // Tắt suspense để tránh lỗi timing
+    },
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage']
     }
   });
 

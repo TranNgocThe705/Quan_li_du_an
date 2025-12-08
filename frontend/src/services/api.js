@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 
 // Create axios instance
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://backend.enroseze.id.vn',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -141,6 +141,11 @@ export const adminAPI = {
     return API.get(`/admin/projects?${query}`);
   },
   deleteProject: (id) => API.delete(`/admin/projects/${id}`),
+  exportReport: (format = 'excel') => {
+    return API.get(`/admin/export-report?format=${format}`, {
+      responseType: 'blob'
+    });
+  },
 };
 
 export default API;
