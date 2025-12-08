@@ -14,6 +14,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
         { name: t('sidebar.dashboard'), href: '/', icon: LayoutDashboardIcon },
         { name: t('sidebar.projects'), href: '/projects', icon: FolderOpenIcon },
         { name: t('sidebar.team'), href: '/team', icon: UsersIcon },
+        { name: t('sidebar.settings'), href: '/settings', icon: SettingsIcon },
     ]
 
     const sidebarRef = useRef(null);
@@ -41,10 +42,6 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
                                 <p className='text-sm truncate'>{item.name}</p>
                             </NavLink>
                         ))}
-                        <button className='flex w-full items-center gap-3 py-2 px-4 text-gray-800 dark:text-zinc-100 cursor-pointer rounded hover:bg-gray-50 dark:hover:bg-zinc-800/60 transition-all'>
-                            <SettingsIcon size={16} />
-                            <p className='text-sm truncate'>{t('sidebar.settings')}</p>
-                        </button>
                     </div>
                     <MyTasksSidebar />
                     <ProjectSidebar />

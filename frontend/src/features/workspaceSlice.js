@@ -86,6 +86,20 @@ export const addWorkspaceMember = createAsyncThunk(
     }
 );
 
+export const inviteMemberByEmail = createAsyncThunk(
+    'workspace/inviteMemberByEmail',
+    async ({ workspaceId, data }, { rejectWithValue }) => {
+        try {
+            const response = await workspaceAPI.inviteMemberByEmail(workspaceId, data);
+            toast.success('Member invited successfully');
+            return { workspaceId, member: response.data.data };
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to invite member');
+            return rejectWithValue(error.response?.data?.message || 'Failed to invite member');
+        }
+    }
+);
+
 export const removeWorkspaceMember = createAsyncThunk(
     'workspace/removeMember',
     async ({ workspaceId, memberId }, { rejectWithValue }) => {
@@ -240,6 +254,29 @@ const workspaceSlice = createSlice({
                 state.workspaces = state.workspaces.map(w => 
                     w._id === action.payload._id ? action.payload : w
                 );
+            })
+            // Invite member by email
+            .addCase(inviteMemberByEmail.fulfilled, (state, action) => {
+                const { workspaceId, member } = action.payload;
+                
+                // Add to current workspace members
+                if (state.currentWorkspace?._id === workspaceId) {
+                    if (!state.currentWorkspace.members) {
+                        state.currentWorkspace.members = [];
+                    }
+                    state.currentWorkspace.members.push(member);
+                }
+                
+                // Add to workspaces array
+                state.workspaces = state.workspaces.map(w => {
+                    if (w._id === workspaceId) {
+                        return {
+                            ...w,
+                            members: [...(w.members || []), member]
+                        };
+                    }
+                    return w;
+                });
             })
             // Remove member
             .addCase(removeWorkspaceMember.fulfilled, (state, action) => {

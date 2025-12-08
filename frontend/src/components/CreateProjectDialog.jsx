@@ -143,10 +143,10 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                         >
                             <option value="">Thêm thành viên</option>
                             {currentWorkspace?.members
-                                ?.filter((member) => !formData.members.some(m => m.user === member.user._id))
+                                ?.filter((member) => member?.userId?._id && !formData.members.some(m => m.user === member.userId._id))
                                 .map((member) => (
-                                    <option key={member.user._id} value={member.user._id}>
-                                        {member.user.name} ({member.user.email})
+                                    <option key={member.userId._id} value={member.userId._id}>
+                                        {member.userId.name} ({member.userId.email})
                                     </option>
                                 ))}
                         </select>
@@ -154,10 +154,10 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                         {formData.members.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-2">
                                 {formData.members.map((member) => {
-                                    const workspaceMember = currentWorkspace?.members?.find(m => m.user._id === member.user);
+                                    const workspaceMember = currentWorkspace?.members?.find(m => m.userId?._id === member.user);
                                     return (
                                         <div key={member.user} className="flex items-center gap-1 bg-blue-200/50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-md text-sm" >
-                                            {workspaceMember?.user?.name || member.user}
+                                            {workspaceMember?.userId?.name || member.user}
                                             <button type="button" onClick={() => removeTeamMember(member.user)} className="ml-1 hover:bg-blue-300/30 dark:hover:bg-blue-500/30 rounded" >
                                                 <XIcon className="w-3 h-3" />
                                             </button>

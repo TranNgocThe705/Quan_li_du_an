@@ -14,17 +14,32 @@ export const getWorkspaces = asyncHandler(async (req, res) => {
     .populate('workspaceId')
     .populate('userId', 'name email image');
 
-  const workspaces = memberships.map((membership) => ({
-    ...membership.workspaceId.toObject(),
-    userRole: membership.role,
-  }));
+  // Get members count for each workspace
+  const workspaces = await Promise.all(
+    memberships.map(async (membership) => {
+      const members = await WorkspaceMember.find({ 
+        workspaceId: membership.workspaceId._id 
+      }).populate('userId', 'name email image');
+      
+      return {
+        ...membership.workspaceId.toObject(),
+        userRole: membership.role,
+        members: members.map(m => ({
+          _id: m._id,
+          userId: m.userId,
+          role: m.role,
+          joinedAt: m.joinedAt
+        }))
+      };
+    })
+  );
 
   return successResponse(res, 200, 'Workspaces retrieved successfully', workspaces);
 });
 
 // @desc    Get workspace by ID with details
 // @route   GET /api/workspaces/:id
-// @access  Private
+// @access  Private (Workspace Member)
 export const getWorkspaceById = asyncHandler(async (req, res) => {
   const workspace = await Workspace.findById(req.params.id).populate(
     'ownerId',
@@ -35,15 +50,8 @@ export const getWorkspaceById = asyncHandler(async (req, res) => {
     return errorResponse(res, 404, 'Workspace not found');
   }
 
-  // Check if user is a member
-  const membership = await WorkspaceMember.findOne({
-    userId: req.user._id,
-    workspaceId: workspace._id,
-  });
-
-  if (!membership) {
-    return errorResponse(res, 403, 'Access denied. You are not a member of this workspace');
-  }
+  // Membership already checked by middleware
+  const membership = req.workspaceMembership;
 
   // Get members
   const members = await WorkspaceMember.find({ workspaceId: workspace._id })
@@ -104,15 +112,7 @@ export const updateWorkspace = asyncHandler(async (req, res) => {
     return errorResponse(res, 404, 'Workspace not found');
   }
 
-  // Check if user is admin
-  const membership = await WorkspaceMember.findOne({
-    userId: req.user._id,
-    workspaceId: workspace._id,
-  });
-
-  if (!membership || membership.role !== WorkspaceRole.ADMIN) {
-    return errorResponse(res, 403, 'Access denied. Admin privileges required');
-  }
+  // Admin permission already checked by middleware
 
   // Update fields
   workspace.name = req.body.name || workspace.name;
@@ -138,20 +138,62 @@ export const updateWorkspace = asyncHandler(async (req, res) => {
 // @route   DELETE /api/workspaces/:id
 // @access  Private (Owner only)
 export const deleteWorkspace = asyncHandler(async (req, res) => {
-  const workspace = await Workspace.findById(req.params.id);
+  // Workspace and owner check already done by middleware
+  const workspace = req.workspace || await Workspace.findById(req.params.id);
 
   if (!workspace) {
     return errorResponse(res, 404, 'Workspace not found');
   }
 
-  // Only owner can delete
-  if (workspace.ownerId.toString() !== req.user._id.toString()) {
-    return errorResponse(res, 403, 'Access denied. Only workspace owner can delete');
-  }
-
   await workspace.deleteOne();
 
   return successResponse(res, 200, 'Workspace deleted successfully');
+});
+
+// @desc    Invite member to workspace by email
+// @route   POST /api/workspaces/:id/invite-member
+// @access  Private (Admin only)
+export const inviteMemberByEmail = asyncHandler(async (req, res) => {
+  const { email, role } = req.body;
+  const workspaceId = req.params.id;
+
+  // Check if workspace exists
+  const workspace = await Workspace.findById(workspaceId);
+  if (!workspace) {
+    return errorResponse(res, 404, 'Workspace not found');
+  }
+
+  // Admin permission already checked by middleware
+
+  // Find user by email
+  const User = (await import('../models/User.js')).default;
+  const user = await User.findOne({ email });
+  if (!user) {
+    return errorResponse(res, 404, 'User with this email not found');
+  }
+
+  // Check if member already exists
+  const existingMember = await WorkspaceMember.findOne({ 
+    userId: user._id, 
+    workspaceId 
+  });
+  if (existingMember) {
+    return errorResponse(res, 400, 'User is already a member of this workspace');
+  }
+
+  // Add member
+  const member = await WorkspaceMember.create({
+    userId: user._id,
+    workspaceId,
+    role: role || WorkspaceRole.MEMBER,
+  });
+
+  const populatedMember = await WorkspaceMember.findById(member._id).populate(
+    'userId',
+    'name email image'
+  );
+
+  return successResponse(res, 201, 'Member invited successfully', populatedMember);
 });
 
 // @desc    Add member to workspace
@@ -167,15 +209,7 @@ export const addMember = asyncHandler(async (req, res) => {
     return errorResponse(res, 404, 'Workspace not found');
   }
 
-  // Check if requester is admin
-  const requesterMembership = await WorkspaceMember.findOne({
-    userId: req.user._id,
-    workspaceId,
-  });
-
-  if (!requesterMembership || requesterMembership.role !== WorkspaceRole.ADMIN) {
-    return errorResponse(res, 403, 'Access denied. Admin privileges required');
-  }
+  // Admin permission already checked by middleware
 
   // Check if member already exists
   const existingMember = await WorkspaceMember.findOne({ userId, workspaceId });
@@ -211,15 +245,7 @@ export const removeMember = asyncHandler(async (req, res) => {
     return errorResponse(res, 404, 'Workspace not found');
   }
 
-  // Check if requester is admin
-  const requesterMembership = await WorkspaceMember.findOne({
-    userId: req.user._id,
-    workspaceId,
-  });
-
-  if (!requesterMembership || requesterMembership.role !== WorkspaceRole.ADMIN) {
-    return errorResponse(res, 403, 'Access denied. Admin privileges required');
-  }
+  // Admin permission already checked by middleware
 
   // Find and delete member
   const member = await WorkspaceMember.findOne({
@@ -248,15 +274,7 @@ export const updateMemberRole = asyncHandler(async (req, res) => {
   const { id: workspaceId, memberId } = req.params;
   const { role } = req.body;
 
-  // Check if requester is admin
-  const requesterMembership = await WorkspaceMember.findOne({
-    userId: req.user._id,
-    workspaceId,
-  });
-
-  if (!requesterMembership || requesterMembership.role !== WorkspaceRole.ADMIN) {
-    return errorResponse(res, 403, 'Access denied. Admin privileges required');
-  }
+  // Admin permission already checked by middleware
 
   // Find and update member
   const member = await WorkspaceMember.findOne({

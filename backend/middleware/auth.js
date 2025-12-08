@@ -57,3 +57,14 @@ export const isWorkspaceAdmin = asyncHandler(async (req, res, next) => {
 
   next();
 });
+
+// System Admin middleware - check if user is system admin
+export const isSystemAdmin = asyncHandler(async (req, res, next) => {
+  if (!req.user.isSystemAdmin) {
+    return errorResponse(res, 403, 'Access denied. System admin privileges required.');
+  }
+  next();
+});
+
+// Super Admin alias (for backward compatibility)
+export const isSuperAdmin = isSystemAdmin;

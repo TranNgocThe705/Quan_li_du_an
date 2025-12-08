@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { Moon, Sun, Languages, Bell, Lock, Save } from 'lucide-react';
-import { toggleTheme } from '../features/themeSlice';
+import { Moon, Sun, Languages, Bell, Lock, Save, X } from 'lucide-react';
+import { setTheme } from '../features/themeSlice';
 import toast from 'react-hot-toast';
+import { userAPI } from '../services/api';
 
 const Settings = () => {
     const { t, i18n } = useTranslation();
@@ -18,15 +19,64 @@ const Settings = () => {
         mentions: true
     });
 
+    const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+
     const changeLanguage = (lng) => {
         i18n.changeLanguage(lng);
         localStorage.setItem('language', lng);
         toast.success(lng === 'vi' ? 'Đã chuyển sang tiếng Việt' : 'Switched to English');
     };
 
+    const handleThemeChange = (newTheme) => {
+        if (theme !== newTheme) {
+            dispatch(setTheme(newTheme));
+            localStorage.setItem('theme', newTheme);
+            if (newTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            toast.success(newTheme === 'dark' ? 'Đã chuyển sang chế độ tối' : 'Đã chuyển sang chế độ sáng');
+        }
+    };
+
     const handleSaveNotifications = () => {
-        // TODO: Implement save notifications API call
+        localStorage.setItem('notifications', JSON.stringify(notifications));
         toast.success(t('settings.saveSuccess'));
+    };
+
+    const handleChangePassword = async () => {
+        if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+            toast.error('Vui lòng điền đầy đủ thông tin');
+            return;
+        }
+        
+        if (passwordData.newPassword.length < 6) {
+            toast.error('Mật khẩu mới phải có ít nhất 6 ký tự');
+            return;
+        }
+        
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            toast.error('Mật khẩu xác nhận không khớp');
+            return;
+        }
+
+        try {
+            await userAPI.updateProfile({ 
+                password: passwordData.newPassword 
+            });
+            
+            toast.success('Đổi mật khẩu thành công!');
+            setShowPasswordDialog(false);
+            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Không thể đổi mật khẩu');
+        }
     };
 
     return (
@@ -54,26 +104,26 @@ const Settings = () => {
                 </p>
                 <div className="flex gap-4">
                     <button
-                        onClick={() => dispatch(toggleTheme())}
+                        onClick={() => handleThemeChange('light')}
                         className={`flex-1 px-4 py-3 rounded-lg border-2 transition ${
                             theme === 'light'
                                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                : 'border-gray-300 dark:border-zinc-700 hover:border-gray-400'
+                                : 'border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-600'
                         }`}
                     >
-                        <Sun size={20} className="mx-auto mb-2" />
-                        <span className="text-sm font-medium">{t('settings.lightMode')}</span>
+                        <Sun size={20} className="mx-auto mb-2 text-gray-900 dark:text-white" />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{t('settings.lightMode')}</span>
                     </button>
                     <button
-                        onClick={() => dispatch(toggleTheme())}
+                        onClick={() => handleThemeChange('dark')}
                         className={`flex-1 px-4 py-3 rounded-lg border-2 transition ${
                             theme === 'dark'
                                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                : 'border-gray-300 dark:border-zinc-700 hover:border-gray-400'
+                                : 'border-gray-300 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-600'
                         }`}
                     >
-                        <Moon size={20} className="mx-auto mb-2" />
-                        <span className="text-sm font-medium">{t('settings.darkMode')}</span>
+                        <Moon size={20} className="mx-auto mb-2 text-gray-900 dark:text-white" />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">{t('settings.darkMode')}</span>
                     </button>
                 </div>
             </div>
@@ -228,10 +278,94 @@ const Settings = () => {
                 <p className="text-sm text-gray-600 dark:text-zinc-400 mb-4">
                     {t('settings.securityDesc')}
                 </p>
-                <button className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-gray-900 dark:text-white rounded-lg text-sm font-medium transition">
+                <button 
+                    onClick={() => setShowPasswordDialog(true)}
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-gray-900 dark:text-white rounded-lg text-sm font-medium transition"
+                >
                     {t('settings.changePassword')}
                 </button>
             </div>
+
+            {/* Change Password Dialog */}
+            {showPasswordDialog && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-xl w-full max-w-md border border-gray-200 dark:border-zinc-800">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-zinc-800">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                Đổi Mật Khẩu
+                            </h3>
+                            <button
+                                onClick={() => {
+                                    setShowPasswordDialog(false);
+                                    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                                }}
+                                className="text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">
+                                    Mật khẩu hiện tại
+                                </label>
+                                <input
+                                    type="password"
+                                    value={passwordData.currentPassword}
+                                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Nhập mật khẩu hiện tại"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">
+                                    Mật khẩu mới
+                                </label>
+                                <input
+                                    type="password"
+                                    value={passwordData.newPassword}
+                                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">
+                                    Xác nhận mật khẩu mới
+                                </label>
+                                <input
+                                    type="password"
+                                    value={passwordData.confirmPassword}
+                                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Nhập lại mật khẩu mới"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-zinc-800">
+                            <button
+                                onClick={() => {
+                                    setShowPasswordDialog(false);
+                                    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                                }}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={handleChangePassword}
+                                className="px-4 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition"
+                            >
+                                Đổi Mật Khẩu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

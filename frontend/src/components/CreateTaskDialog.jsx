@@ -9,7 +9,19 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
     const currentProject = useSelector((state) => state.project.currentProject);
+    const currentWorkspace = useSelector((state) => state.workspace.currentWorkspace);
     const teamMembers = currentProject?.members || [];
+
+    // Kiểm tra role của user hiện tại
+    const userWorkspaceMember = currentWorkspace?.members?.find(m => m.userId?._id === user?._id);
+    
+    // User là MANAGER hoặc TEAM_LEAD nếu:
+    // - Là team_lead của project
+    // - Hoặc là MANAGER trong workspace
+    // - Hoặc là System Admin
+    const isTeamLead = currentProject?.team_lead?._id === user?._id;
+    const isWorkspaceManager = userWorkspaceMember?.role === 'MANAGER';
+    const canAssignToOthers = isTeamLead || isWorkspaceManager || user?.isSystemAdmin;
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
@@ -18,7 +30,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
         type: "TASK",
         status: "TODO",
         priority: "MEDIUM",
-        assigneeId: "",
+        assigneeId: canAssignToOthers ? "" : user?._id, // Nếu không có quyền thì tự assign
         due_date: "",
     });
 
@@ -27,10 +39,15 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
         setIsSubmitting(true);
 
         try {
+            // Nếu không có quyền assign cho người khác, bắt buộc assign cho chính mình
+            const finalAssigneeId = canAssignToOthers 
+                ? (formData.assigneeId || user?._id) 
+                : user?._id;
+
             await dispatch(createTask({
                 ...formData,
                 projectId: projectId,
-                assigneeId: formData.assigneeId || user?._id, // Default to current user if no assignee
+                assigneeId: finalAssigneeId,
             })).unwrap();
 
             toast.success('Tạo task thành công!');
@@ -45,7 +62,7 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                 type: "TASK",
                 status: "TODO",
                 priority: "MEDIUM",
-                assigneeId: "",
+                assigneeId: canAssignToOthers ? "" : user?._id,
                 due_date: "",
             });
             setShowCreateTask(false);
@@ -100,14 +117,33 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
                     {/* Assignee and Status */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <label className="text-sm font-medium">Người Nhận</label>
-                            <select value={formData.assigneeId} onChange={(e) => setFormData({ ...formData, assigneeId: e.target.value })} className="w-full rounded dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1" >
-                                <option value="">Chưa phân công</option>
-                                {teamMembers.map((member) => (
-                                    <option key={member?.userId?._id} value={member?.userId?._id}>
-                                        {member?.userId?.name || member?.userId?.email}
+                            <label className="text-sm font-medium">
+                                Người Nhận
+                                {!canAssignToOthers && (
+                                    <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-2">(Chỉ assign cho bản thân)</span>
+                                )}
+                            </label>
+                            <select 
+                                value={formData.assigneeId} 
+                                onChange={(e) => setFormData({ ...formData, assigneeId: e.target.value })} 
+                                className="w-full rounded dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-zinc-900 dark:text-zinc-200 text-sm mt-1"
+                                disabled={!canAssignToOthers}
+                            >
+                                {canAssignToOthers ? (
+                                    <>
+                                        <option value="">Chưa phân công</option>
+                                        {teamMembers.map((member) => (
+                                            <option key={member?.userId?._id} value={member?.userId?._id}>
+                                                {member?.userId?._id === user?._id && '(Bạn) '}
+                                                {member?.userId?.name || member?.userId?.email}
+                                            </option>
+                                        ))}
+                                    </>
+                                ) : (
+                                    <option value={user?._id}>
+                                        {user?.name || user?.email} (Bạn)
                                     </option>
-                                ))}
+                                )}
                             </select>
                         </div>
 

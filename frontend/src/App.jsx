@@ -12,7 +12,10 @@ import ProjectDetails from "./pages/ProjectDetails";
 import TaskDetails from "./pages/TaskDetails";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import GoogleAuthCallback from "./pages/GoogleAuthCallback";
+import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import { getMe } from "./features/authSlice";
 
 const App = () => {
@@ -33,6 +36,7 @@ const App = () => {
                 {/* Public routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/auth/google/success" element={<GoogleAuthCallback />} />
                 
                 {/* Protected routes */}
                 <Route
@@ -51,6 +55,16 @@ const App = () => {
                     <Route path="projectsDetail" element={<ProjectDetails />} />
                     <Route path="taskDetails" element={<TaskDetails />} />
                 </Route>
+
+                {/* Admin routes */}
+                <Route 
+                    path="/admin" 
+                    element={
+                        <ProtectedAdminRoute>
+                            <AdminDashboard />
+                        </ProtectedAdminRoute>
+                    } 
+                />
 
                 {/* Catch all - redirect to home */}
                 <Route path="*" element={<Navigate to="/" replace />} />

@@ -17,8 +17,10 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleGoogleSignIn = () => {
-    console.log('Google Sign-In clicked');
-    toast.info(t('auth.googleOAuth'));
+    // Redirect to backend Google OAuth endpoint
+    console.log('Google Sign-In button clicked!');
+    console.log('Redirecting to:', 'http://localhost:5000/api/auth/google');
+    window.location.href = 'http://localhost:5000/api/auth/google';
   };
 
   const handleSubmit = async (e) => {
@@ -30,9 +32,15 @@ const Login = () => {
     }
 
     try {
-      await dispatch(login({ email, password })).unwrap();
+      const result = await dispatch(login({ email, password })).unwrap();
       toast.success(t('auth.loginSuccess'));
-      navigate('/');
+      
+      // Redirect based on user role
+      if (result.user?.isSystemAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       // Error toast already handled by API interceptor
       console.error('Login error:', error);
@@ -134,15 +142,6 @@ const Login = () => {
               )}
             </button>
           </form>
-
-          {/* Demo Accounts */}
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-100 dark:border-blue-900">
-            <p className="text-xs font-semibold text-blue-900 dark:text-blue-400 mb-2">{t('auth.demoAccounts')}</p>
-            <div className="space-y-1 text-xs text-blue-700 dark:text-blue-300">
-              <p>{t('auth.admin')}</p>
-              <p>{t('auth.member')}</p>
-            </div>
-          </div>
 
           {/* Sign Up Link */}
           <p className="text-center text-sm text-gray-600 dark:text-zinc-400 mt-6">

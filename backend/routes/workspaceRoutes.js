@@ -9,9 +9,15 @@ import {
   addMember,
   removeMember,
   updateMemberRole,
+  inviteMemberByEmail,
 } from '../controllers/workspaceController.js';
 import { protect } from '../middleware/auth.js';
 import { validate } from '../middleware/validation.js';
+import { 
+  checkWorkspaceMember, 
+  checkWorkspaceAdmin,
+  checkWorkspaceOwner 
+} from '../middleware/checkPermission.js';
 
 const router = express.Router();
 
@@ -32,6 +38,11 @@ const addMemberValidation = [
   body('role').optional().isIn(['ADMIN', 'MEMBER']).withMessage('Invalid role'),
 ];
 
+const inviteMemberByEmailValidation = [
+  body('email').isEmail().withMessage('Valid email is required'),
+  body('role').optional().isIn(['ADMIN', 'MEMBER']).withMessage('Invalid role'),
+];
+
 const updateMemberRoleValidation = [
   body('role').isIn(['ADMIN', 'MEMBER']).withMessage('Invalid role'),
 ];
@@ -39,13 +50,14 @@ const updateMemberRoleValidation = [
 // Workspace routes
 router.get('/', protect, getWorkspaces);
 router.post('/', protect, createWorkspaceValidation, validate, createWorkspace);
-router.get('/:id', protect, getWorkspaceById);
-router.put('/:id', protect, updateWorkspaceValidation, validate, updateWorkspace);
-router.delete('/:id', protect, deleteWorkspace);
+router.get('/:id', protect, checkWorkspaceMember, getWorkspaceById);
+router.put('/:id', protect, checkWorkspaceAdmin, updateWorkspaceValidation, validate, updateWorkspace);
+router.delete('/:id', protect, checkWorkspaceOwner, deleteWorkspace);
 
-// Member management routes
-router.post('/:id/members', protect, addMemberValidation, validate, addMember);
-router.delete('/:id/members/:memberId', protect, removeMember);
-router.put('/:id/members/:memberId', protect, updateMemberRoleValidation, validate, updateMemberRole);
+// Member management routes (Admin only)
+router.post('/:id/members', protect, checkWorkspaceAdmin, addMemberValidation, validate, addMember);
+router.post('/:id/invite-member', protect, checkWorkspaceAdmin, inviteMemberByEmailValidation, validate, inviteMemberByEmail);
+router.delete('/:id/members/:memberId', protect, checkWorkspaceAdmin, removeMember);
+router.put('/:id/members/:memberId', protect, checkWorkspaceAdmin, updateMemberRoleValidation, validate, updateMemberRole);
 
 export default router;

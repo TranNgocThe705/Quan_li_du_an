@@ -1,19 +1,48 @@
 import { useState } from "react";
 import { Mail, UserPlus } from "lucide-react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { inviteMemberByEmail, fetchWorkspaceById } from "../features/workspaceSlice";
+import toast from "react-hot-toast";
 
 const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
 
+    const dispatch = useDispatch();
     const currentWorkspace = useSelector((state) => state.workspace?.currentWorkspace || null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         email: "",
-        role: "org:member",
+        role: "MEMBER",
     });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (!currentWorkspace) {
+            toast.error("No workspace selected");
+            return;
+        }
 
+        setIsSubmitting(true);
+        try {
+            await dispatch(inviteMemberByEmail({ 
+                workspaceId: currentWorkspace._id, 
+                data: { 
+                    email: formData.email, 
+                    role: formData.role 
+                } 
+            })).unwrap();
+            
+            // Refresh workspace data to get updated members list
+            await dispatch(fetchWorkspaceById(currentWorkspace._id));
+            
+            // Reset form and close dialog
+            setFormData({ email: "", role: "MEMBER" });
+            setIsDialogOpen(false);
+        } catch (error) {
+            console.error("Failed to invite member:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (!isDialogOpen) return null;
@@ -50,8 +79,8 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-zinc-900 dark:text-zinc-200">Role</label>
                         <select value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} className="w-full rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-200 py-2 px-3 mt-1 focus:outline-none focus:border-blue-500 text-sm" >
-                            <option value="org:member">Member</option>
-                            <option value="org:admin">Admin</option>
+                            <option value="MEMBER">Member</option>
+                            <option value="ADMIN">Admin</option>
                         </select>
                     </div>
 

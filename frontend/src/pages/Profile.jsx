@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { User, Mail, Calendar, Shield, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { userAPI } from '../services/api';
+import { updateUser } from '../features/authSlice';
 
 const Profile = () => {
     const { t } = useTranslation();
+    const dispatch = useDispatch();
     const { user } = useSelector(state => state.auth);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
@@ -18,11 +21,17 @@ const Profile = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            // TODO: Implement update profile API call
+            const response = await userAPI.updateProfile(formData);
+            
+            // Cập nhật Redux store với user mới
+            if (response.data?.data) {
+                dispatch(updateUser(response.data.data));
+            }
+            
             toast.success(t('profile.updateSuccess'));
             setIsEditing(false);
-        } catch {
-            toast.error(t('profile.updateError'));
+        } catch (error) {
+            toast.error(error.response?.data?.message || t('profile.updateError'));
         }
     };
 

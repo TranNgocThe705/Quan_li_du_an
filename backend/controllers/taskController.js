@@ -46,9 +46,10 @@ export const getTasks = asyncHandler(async (req, res) => {
 
 // @desc    Get task by ID with details
 // @route   GET /api/tasks/:id
-// @access  Private
+// @access  Private (Project Member)
 export const getTaskById = asyncHandler(async (req, res) => {
-  const task = await Task.findById(req.params.id)
+  // Task and access already checked by middleware
+  const task = req.task || await Task.findById(req.params.id)
     .populate('assigneeId', 'name email image')
     .populate('projectId', 'name workspaceId');
 
@@ -56,22 +57,12 @@ export const getTaskById = asyncHandler(async (req, res) => {
     return errorResponse(res, 404, 'Task not found');
   }
 
-  // Check if user is project member
-  const isMember = await ProjectMember.findOne({
-    userId: req.user._id,
-    projectId: task.projectId._id,
-  });
-
-  if (!isMember) {
-    return errorResponse(res, 403, 'Access denied');
-  }
-
   return successResponse(res, 200, 'Task retrieved successfully', task);
 });
 
 // @desc    Create new task
 // @route   POST /api/tasks
-// @access  Private
+// @access  Private (Workspace Member with project access)
 export const createTask = asyncHandler(async (req, res) => {
   const {
     projectId,
@@ -84,20 +75,10 @@ export const createTask = asyncHandler(async (req, res) => {
     due_date,
   } = req.body;
 
-  // Check if project exists
-  const project = await Project.findById(projectId);
+  // Project and workspace membership already checked by middleware
+  const project = req.project || await Project.findById(projectId);
   if (!project) {
     return errorResponse(res, 404, 'Project not found');
-  }
-
-  // Check if user is project member (can create tasks)
-  const isMember = await ProjectMember.findOne({
-    userId: req.user._id,
-    projectId,
-  });
-
-  if (!isMember) {
-    return errorResponse(res, 403, 'Access denied. You are not a member of this project');
   }
 
   // Check if assignee is project member
@@ -131,22 +112,13 @@ export const createTask = asyncHandler(async (req, res) => {
 
 // @desc    Update task
 // @route   PUT /api/tasks/:id
-// @access  Private
+// @access  Private (Task assignee, Team Lead, or Workspace Admin)
 export const updateTask = asyncHandler(async (req, res) => {
-  const task = await Task.findById(req.params.id);
+  // Task and permissions already checked by middleware
+  const task = req.task || await Task.findById(req.params.id);
 
   if (!task) {
     return errorResponse(res, 404, 'Task not found');
-  }
-
-  // Check if user is project member
-  const isMember = await ProjectMember.findOne({
-    userId: req.user._id,
-    projectId: task.projectId,
-  });
-
-  if (!isMember) {
-    return errorResponse(res, 403, 'Access denied');
   }
 
   // Update fields
@@ -188,22 +160,13 @@ export const updateTask = asyncHandler(async (req, res) => {
 
 // @desc    Delete task
 // @route   DELETE /api/tasks/:id
-// @access  Private
+// @access  Private (Task assignee, Team Lead, or Workspace Admin)
 export const deleteTask = asyncHandler(async (req, res) => {
-  const task = await Task.findById(req.params.id);
+  // Task and permissions already checked by middleware
+  const task = req.task || await Task.findById(req.params.id);
 
   if (!task) {
     return errorResponse(res, 404, 'Task not found');
-  }
-
-  // Check if user is project member
-  const isMember = await ProjectMember.findOne({
-    userId: req.user._id,
-    projectId: task.projectId,
-  });
-
-  if (!isMember) {
-    return errorResponse(res, 403, 'Access denied');
   }
 
   await task.deleteOne();

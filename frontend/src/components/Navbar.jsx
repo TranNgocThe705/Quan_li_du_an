@@ -1,4 +1,4 @@
-import { SearchIcon, PanelLeft, LogOut, MoonIcon, SunIcon, User, Settings, ChevronDown, Languages } from 'lucide-react'
+import { SearchIcon, PanelLeft, LogOut, MoonIcon, SunIcon, User, Settings, ChevronDown, Languages, FolderIcon, CheckSquare, Users } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
@@ -14,8 +14,14 @@ const Navbar = ({ setIsSidebarOpen }) => {
     const { t, i18n } = useTranslation();
     const { theme } = useSelector(state => state.theme);
     const { user } = useSelector(state => state.auth);
+    const { projects } = useSelector(state => state.project);
+    const { tasks } = useSelector(state => state.task);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [showSearchResults, setShowSearchResults] = useState(false);
     const dropdownRef = useRef(null);
+    const searchRef = useRef(null);
 
     const changeLanguage = (lng) => {
         i18n.changeLanguage(lng);
@@ -33,11 +39,66 @@ const Navbar = ({ setIsSidebarOpen }) => {
         }
     };
 
-    // Close dropdown when clicking outside
+    // Search functionality
+    useEffect(() => {
+        if (searchQuery.trim().length === 0) {
+            setSearchResults([]);
+            setShowSearchResults(false);
+            return;
+        }
+
+        const query = searchQuery.toLowerCase();
+        const results = [];
+
+        // Search projects
+        if (projects && projects.length > 0) {
+            const matchedProjects = projects
+                .filter(project => 
+                    project.name.toLowerCase().includes(query) ||
+                    project.description?.toLowerCase().includes(query)
+                )
+                .slice(0, 3)
+                .map(project => ({
+                    type: 'project',
+                    id: project._id,
+                    name: project.name,
+                    description: project.description,
+                    icon: FolderIcon
+                }));
+            results.push(...matchedProjects);
+        }
+
+        // Search tasks
+        if (tasks && tasks.length > 0) {
+            const matchedTasks = tasks
+                .filter(task => 
+                    task.title.toLowerCase().includes(query) ||
+                    task.description?.toLowerCase().includes(query)
+                )
+                .slice(0, 3)
+                .map(task => ({
+                    type: 'task',
+                    id: task._id,
+                    name: task.title,
+                    description: task.description,
+                    icon: CheckSquare,
+                    projectId: task.projectId
+                }));
+            results.push(...matchedTasks);
+        }
+
+        setSearchResults(results);
+        setShowSearchResults(results.length > 0);
+    }, [searchQuery, projects, tasks]);
+
+    // Close dropdown and search results when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setIsDropdownOpen(false);
+            }
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setShowSearchResults(false);
             }
         };
 
@@ -46,6 +107,16 @@ const Navbar = ({ setIsSidebarOpen }) => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    const handleSearchResultClick = (result) => {
+        if (result.type === 'project') {
+            navigate(`/projectsDetail?id=${result.id}&tab=overview`);
+        } else if (result.type === 'task') {
+            navigate(`/taskDetails?id=${result.id}`);
+        }
+        setSearchQuery('');
+        setShowSearchResults(false);
+    };
 
     return (
         <div className="w-full bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-6 xl:px-16 py-3 flex-shrink-0">
@@ -57,14 +128,55 @@ const Navbar = ({ setIsSidebarOpen }) => {
                         <PanelLeft size={20} />
                     </button>
 
-                    {/* Search Input */}
-                    <div className="relative flex-1 max-w-sm">
-                        <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-400 size-3.5" />
+                    {/* Search Input with Autocomplete */}
+                    <div className="relative flex-1 max-w-sm" ref={searchRef}>
+                        <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-400 size-3.5 z-10" />
                         <input
                             type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => searchResults.length > 0 && setShowSearchResults(true)}
                             placeholder={t('nav.search')}
                             className="pl-8 pr-4 py-2 w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-md text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition"
                         />
+                        
+                        {/* Search Results Dropdown */}
+                        {showSearchResults && searchResults.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-lg max-h-96 overflow-y-auto z-50">
+                                {searchResults.map((result, index) => {
+                                    const Icon = result.icon;
+                                    return (
+                                        <button
+                                            key={`${result.type}-${result.id}-${index}`}
+                                            onClick={() => handleSearchResultClick(result)}
+                                            className="w-full px-4 py-3 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors border-b border-gray-100 dark:border-zinc-700 last:border-0"
+                                        >
+                                            <Icon className="size-4 text-gray-400 dark:text-zinc-400 mt-0.5 flex-shrink-0" />
+                                            <div className="flex-1 text-left min-w-0">
+                                                <div className="flex items-center gap-2 mb-0.5">
+                                                    <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                        {result.name}
+                                                    </span>
+                                                    <span className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-zinc-700 text-gray-600 dark:text-zinc-400 rounded capitalize">
+                                                        {result.type}
+                                                    </span>
+                                                </div>
+                                                {result.description && (
+                                                    <p className="text-xs text-gray-500 dark:text-zinc-400 line-clamp-1">
+                                                        {result.description}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                                {searchResults.length === 0 && (
+                                    <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-zinc-400">
+                                        Không tìm thấy kết quả nào
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 

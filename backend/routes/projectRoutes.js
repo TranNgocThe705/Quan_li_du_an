@@ -11,6 +11,11 @@ import {
 } from '../controllers/projectController.js';
 import { protect } from '../middleware/auth.js';
 import { validate } from '../middleware/validation.js';
+import { 
+  checkWorkspaceAccessFromProject,
+  checkProjectMember,
+  checkProjectManagePermission 
+} from '../middleware/checkPermission.js';
 
 const router = express.Router();
 
@@ -45,14 +50,14 @@ const addMemberValidation = [
 ];
 
 // Project routes
-router.get('/', protect, getProjects);
-router.post('/', protect, createProjectValidation, validate, createProject);
-router.get('/:id', protect, getProjectById);
-router.put('/:id', protect, updateProjectValidation, validate, updateProject);
-router.delete('/:id', protect, deleteProject);
+router.get('/', protect, getProjects); // Query param: workspaceId (checked in controller)
+router.post('/', protect, createProjectValidation, validate, createProject); // workspaceId in body (checked in controller)
+router.get('/:id', protect, checkProjectMember, getProjectById);
+router.put('/:id', protect, checkProjectManagePermission, updateProjectValidation, validate, updateProject);
+router.delete('/:id', protect, checkProjectManagePermission, deleteProject);
 
-// Member management routes
-router.post('/:id/members', protect, addMemberValidation, validate, addProjectMember);
-router.delete('/:id/members/:memberId', protect, removeProjectMember);
+// Member management routes (Team Lead or Workspace Admin only)
+router.post('/:id/members', protect, checkProjectManagePermission, addMemberValidation, validate, addProjectMember);
+router.delete('/:id/members/:memberId', protect, checkProjectManagePermission, removeProjectMember);
 
 export default router;

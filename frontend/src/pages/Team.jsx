@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { UsersIcon, Search, UserPlus, Shield, Activity } from "lucide-react";
 import InviteMemberDialog from "../components/InviteMemberDialog";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { fetchWorkspaceById } from "../features/workspaceSlice";
 
 const Team = () => {
     const { t } = useTranslation();
+    const dispatch = useDispatch();
     const [tasks, setTasks] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -14,14 +16,34 @@ const Team = () => {
     const projects = currentWorkspace?.projects || [];
 
     const filteredUsers = users.filter(
-        (user) =>
-            user?.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user?.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        (member) =>
+            member?.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            member?.userId?.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     useEffect(() => {
+        // Always fetch full workspace details when Team page loads
+        if (currentWorkspace?._id) {
+            console.log("Fetching workspace details for:", currentWorkspace._id);
+            dispatch(fetchWorkspaceById(currentWorkspace._id));
+        }
+    }, [dispatch]);
+
+    useEffect(() => {
+        console.log("Current workspace:", currentWorkspace);
+        console.log("Current workspace members:", currentWorkspace?.members);
+        
+        // Set members
         setUsers(currentWorkspace?.members || []);
-        setTasks(currentWorkspace?.projects?.reduce((acc, project) => [...acc, ...project.tasks], []) || []);
+        
+        // Set tasks - safely handle projects that might not have tasks array
+        const allTasks = currentWorkspace?.projects?.reduce((acc, project) => {
+            if (project?.tasks && Array.isArray(project.tasks)) {
+                return [...acc, ...project.tasks];
+            }
+            return acc;
+        }, []) || [];
+        setTasks(allTasks);
     }, [currentWorkspace]);
 
     return (
@@ -129,21 +151,21 @@ const Team = () => {
                                 <tbody className="divide-y divide-gray-200 dark:divide-zinc-800">
                                     {filteredUsers.map((user) => (
                                         <tr
-                                            key={user.id}
+                                            key={user._id}
                                             className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
                                         >
                                             <td className="px-6 py-2.5 whitespace-nowrap flex items-center gap-3">
                                                 <img
-                                                    src={user.user.image}
-                                                    alt={user.user.name}
+                                                    src={user.userId?.image || 'https://ui-avatars.com/api/?name=' + (user.userId?.name || 'User')}
+                                                    alt={user.userId?.name || 'User'}
                                                     className="size-7 rounded-full bg-gray-200 dark:bg-zinc-800"
                                                 />
                                                 <span className="text-sm text-zinc-800 dark:text-white truncate">
-                                                    {user.user?.name || "Unknown User"}
+                                                    {user.userId?.name || "Unknown User"}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-2.5 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400">
-                                                {user.user.email}
+                                                {user.userId?.email || 'N/A'}
                                             </td>
                                             <td className="px-6 py-2.5 whitespace-nowrap">
                                                 <span
@@ -152,7 +174,7 @@ const Team = () => {
                                                             : "bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300"
                                                         }`}
                                                 >
-                                                    {user.role || "User"}
+                                                    {user.role || "MEMBER"}
                                                 </span>
                                             </td>
                                         </tr>
@@ -165,21 +187,21 @@ const Team = () => {
                         <div className="sm:hidden space-y-3">
                             {filteredUsers.map((user) => (
                                 <div
-                                    key={user.id}
+                                    key={user._id}
                                     className="p-4 border border-gray-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-900"
                                 >
                                     <div className="flex items-center gap-3 mb-2">
                                         <img
-                                            src={user.user.image}
-                                            alt={user.user.name}
+                                            src={user.userId?.image || 'https://ui-avatars.com/api/?name=' + (user.userId?.name || 'User')}
+                                            alt={user.userId?.name || 'User'}
                                             className="size-9 rounded-full bg-gray-200 dark:bg-zinc-800"
                                         />
                                         <div>
                                             <p className="font-medium text-gray-900 dark:text-white">
-                                                {user.user?.name || "Unknown User"}
+                                                {user.userId?.name || "Unknown User"}
                                             </p>
                                             <p className="text-sm text-gray-500 dark:text-zinc-400">
-                                                {user.user.email}
+                                                {user.userId?.email || 'N/A'}
                                             </p>
                                         </div>
                                     </div>
@@ -190,7 +212,7 @@ const Team = () => {
                                                     : "bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300"
                                                 }`}
                                         >
-                                            {user.role || "User"}
+                                            {user.role || "MEMBER"}
                                         </span>
                                     </div>
                                 </div>

@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { ChevronRightIcon, SettingsIcon, KanbanIcon, ChartColumnIcon, CalendarIcon, ArrowRightIcon } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 
 const ProjectSidebar = () => {
-
+    const { t } = useTranslation();
     const location = useLocation();
 
     const [expandedProjects, setExpandedProjects] = useState(new Set());
@@ -13,10 +14,10 @@ const ProjectSidebar = () => {
     const projects = useSelector((state) => state?.project?.projects || []);
 
     const getProjectSubItems = (projectId) => [
-        { title: 'Tasks', icon: KanbanIcon, url: `/projectsDetail?id=${projectId}&tab=tasks` },
-        { title: 'Analytics', icon: ChartColumnIcon, url: `/projectsDetail?id=${projectId}&tab=analytics` },
-        { title: 'Calendar', icon: CalendarIcon, url: `/projectsDetail?id=${projectId}&tab=calendar` },
-        { title: 'Settings', icon: SettingsIcon, url: `/projectsDetail?id=${projectId}&tab=settings` }
+        { title: t('projects.tasks'), key: 'tasks', icon: KanbanIcon, url: `/projectsDetail?id=${projectId}&tab=tasks` },
+        { title: t('projects.analytics'), key: 'analytics', icon: ChartColumnIcon, url: `/projectsDetail?id=${projectId}&tab=analytics` },
+        { title: t('projects.calendar'), key: 'calendar', icon: CalendarIcon, url: `/projectsDetail?id=${projectId}&tab=calendar` },
+        { title: t('projects.settings'), key: 'settings', icon: SettingsIcon, url: `/projectsDetail?id=${projectId}&tab=settings` }
     ];
 
     const toggleProject = (id) => {
@@ -29,7 +30,7 @@ const ProjectSidebar = () => {
         <div className="mt-6 px-3">
             <div className="flex items-center justify-between px-3 py-2">
                 <h3 className="text-xs font-medium text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
-                    Projects
+                    {t('projects.projectsTitle')}
                 </h3>
                 <Link to="/projects">
                     <button className="size-5 text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 rounded flex items-center justify-center transition-colors duration-200">
@@ -54,10 +55,10 @@ const ProjectSidebar = () => {
                                     const isActive =
                                         location.pathname === `/projectsDetail` &&
                                         searchParams.get('id') === project._id &&
-                                        searchParams.get('tab') === subItem.title.toLowerCase();
+                                        searchParams.get('tab') === subItem.key;
 
                                     return (
-                                        <Link key={subItem.title} to={subItem.url} className={`flex items-center gap-3 px-3 py-1.5 rounded-lg transition-colors duration-200 text-xs ${isActive ? 'bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20' : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800'}`} >
+                                        <Link key={subItem.key} to={subItem.url} className={`flex items-center gap-3 px-3 py-1.5 rounded-lg transition-colors duration-200 text-xs ${isActive ? 'bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20' : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800'}`} >
                                             <subItem.icon className="size-3" />
                                             {subItem.title}
                                         </Link>

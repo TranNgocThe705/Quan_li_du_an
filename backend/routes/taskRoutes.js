@@ -10,6 +10,11 @@ import {
 } from '../controllers/taskController.js';
 import { protect } from '../middleware/auth.js';
 import { validate } from '../middleware/validation.js';
+import { 
+  checkTaskAccess,
+  checkTaskManagePermission,
+  checkWorkspaceAccessFromProject 
+} from '../middleware/checkPermission.js';
 
 const router = express.Router();
 
@@ -46,10 +51,10 @@ const updateTaskValidation = [
 
 // Task routes
 router.get('/my-tasks', protect, getMyTasks);
-router.get('/', protect, getTasks);
-router.post('/', protect, createTaskValidation, validate, createTask);
-router.get('/:id', protect, getTaskById);
-router.put('/:id', protect, updateTaskValidation, validate, updateTask);
-router.delete('/:id', protect, deleteTask);
+router.get('/', protect, getTasks); // Query param: projectId (checked in controller)
+router.post('/', protect, checkWorkspaceAccessFromProject, createTaskValidation, validate, createTask);
+router.get('/:id', protect, checkTaskAccess, getTaskById);
+router.put('/:id', protect, checkTaskManagePermission, updateTaskValidation, validate, updateTask);
+router.delete('/:id', protect, checkTaskManagePermission, deleteTask);
 
 export default router;

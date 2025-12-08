@@ -26,12 +26,9 @@ export const fetchProjectById = createAsyncThunk(
     'project/fetchProjectById',
     async (id, { rejectWithValue }) => {
         try {
-            console.log('Fetching project by ID:', id);
             const response = await projectAPI.getProjectById(id);
-            console.log('Project fetched:', response.data.data);
             return response.data.data;
         } catch (error) {
-            console.error('Error fetching project:', error);
             const message = error.response?.data?.message || 'Không thể tải chi tiết dự án';
             toast.error(message);
             return rejectWithValue(message);

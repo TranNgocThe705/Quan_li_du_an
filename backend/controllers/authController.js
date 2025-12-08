@@ -77,6 +77,7 @@ export const login = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       image: user.image,
+      isSystemAdmin: user.isSystemAdmin || false,
       token,
     });
   } else {
@@ -95,6 +96,7 @@ export const getMe = asyncHandler(async (req, res) => {
     name: user.name,
     email: user.email,
     image: user.image,
+    isSystemAdmin: user.isSystemAdmin || false,
     createdAt: user.createdAt,
   });
 });
@@ -105,4 +107,16 @@ export const getMe = asyncHandler(async (req, res) => {
 export const logout = asyncHandler(async (req, res) => {
   // Since we're using JWT, logout is handled client-side by removing the token
   return successResponse(res, 200, 'Logged out successfully');
+});
+
+// @desc    Google OAuth callback
+// @route   GET /api/auth/google/callback
+// @access  Public
+export const googleCallback = asyncHandler(async (req, res) => {
+  // User is authenticated by passport, generate JWT token
+  const token = generateToken(req.user._id);
+  
+  // Redirect to frontend with token
+  const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173';
+  res.redirect(`${frontendURL}/auth/google/success?token=${token}`);
 });

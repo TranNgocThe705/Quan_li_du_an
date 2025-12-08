@@ -4,6 +4,12 @@ export const WorkspaceRole = {
   MEMBER: 'MEMBER',
 };
 
+export const ProjectRole = {
+  LEAD: 'LEAD',         // Team Lead - Full control over project
+  MEMBER: 'MEMBER',     // Regular member - Can create/update tasks
+  VIEWER: 'VIEWER',     // Read-only access
+};
+
 export const TaskStatus = {
   TODO: 'TODO',
   IN_PROGRESS: 'IN_PROGRESS',

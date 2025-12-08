@@ -34,12 +34,13 @@ export const getProjects = asyncHandler(async (req, res) => {
 
 // @desc    Get project by ID with details
 // @route   GET /api/projects/:id
-// @access  Private
+// @access  Private (Project Member)
 export const getProjectById = asyncHandler(async (req, res) => {
   console.log('🔍 getProjectById called with ID:', req.params.id);
   console.log('👤 User:', req.user?.email);
   
-  const project = await Project.findById(req.params.id)
+  // Project and membership already checked by middleware
+  const project = req.project || await Project.findById(req.params.id)
     .populate('team_lead', 'name email image')
     .populate('workspaceId', 'name slug');
 
@@ -47,18 +48,6 @@ export const getProjectById = asyncHandler(async (req, res) => {
 
   if (!project) {
     return errorResponse(res, 404, 'Project not found');
-  }
-
-  // Check if user is member of workspace
-  const isMember = await WorkspaceMember.findOne({
-    userId: req.user._id,
-    workspaceId: project.workspaceId._id || project.workspaceId,
-  });
-
-  console.log('🔐 Is member?', isMember ? 'YES' : 'NO');
-
-  if (!isMember) {
-    return errorResponse(res, 403, 'Access denied. You are not a member of this workspace');
   }
 
   // Get project members
@@ -119,32 +108,42 @@ export const createProject = asyncHandler(async (req, res) => {
     projectId: project._id,
   });
 
+  // Add other members if provided
+  if (req.body.members && Array.isArray(req.body.members)) {
+    const memberPromises = req.body.members
+      .filter(member => member.user && member.user !== (team_lead || req.user._id).toString())
+      .map(member => 
+        ProjectMember.create({
+          userId: member.user,
+          projectId: project._id,
+        })
+      );
+    await Promise.all(memberPromises);
+  }
+
+  // Get project with members
+  const members = await ProjectMember.find({ projectId: project._id })
+    .populate('userId', 'name email image');
+
   const populatedProject = await Project.findById(project._id)
     .populate('team_lead', 'name email image')
     .populate('workspaceId', 'name slug');
 
-  return successResponse(res, 201, 'Project created successfully', populatedProject);
+  return successResponse(res, 201, 'Project created successfully', {
+    ...populatedProject.toObject(),
+    members,
+  });
 });
 
 // @desc    Update project
 // @route   PUT /api/projects/:id
 // @access  Private (Team lead or workspace admin)
 export const updateProject = asyncHandler(async (req, res) => {
-  const project = await Project.findById(req.params.id);
+  // Project and permissions already checked by middleware
+  const project = req.project || await Project.findById(req.params.id);
 
   if (!project) {
     return errorResponse(res, 404, 'Project not found');
-  }
-
-  // Check if user is team lead or workspace admin
-  const isTeamLead = project.team_lead.toString() === req.user._id.toString();
-  const workspaceMembership = await WorkspaceMember.findOne({
-    userId: req.user._id,
-    workspaceId: project.workspaceId,
-  });
-
-  if (!isTeamLead && (!workspaceMembership || workspaceMembership.role !== 'ADMIN')) {
-    return errorResponse(res, 403, 'Access denied. Only team lead or workspace admin can update');
   }
 
   // Update fields
@@ -177,21 +176,11 @@ export const updateProject = asyncHandler(async (req, res) => {
 // @route   DELETE /api/projects/:id
 // @access  Private (Team lead or workspace admin)
 export const deleteProject = asyncHandler(async (req, res) => {
-  const project = await Project.findById(req.params.id);
+  // Project and permissions already checked by middleware
+  const project = req.project || await Project.findById(req.params.id);
 
   if (!project) {
     return errorResponse(res, 404, 'Project not found');
-  }
-
-  // Check if user is team lead or workspace admin
-  const isTeamLead = project.team_lead.toString() === req.user._id.toString();
-  const workspaceMembership = await WorkspaceMember.findOne({
-    userId: req.user._id,
-    workspaceId: project.workspaceId,
-  });
-
-  if (!isTeamLead && (!workspaceMembership || workspaceMembership.role !== 'ADMIN')) {
-    return errorResponse(res, 403, 'Access denied');
   }
 
   await project.deleteOne();
@@ -206,20 +195,10 @@ export const addProjectMember = asyncHandler(async (req, res) => {
   const { userId } = req.body;
   const projectId = req.params.id;
 
-  const project = await Project.findById(projectId);
+  // Project and permissions already checked by middleware
+  const project = req.project || await Project.findById(projectId);
   if (!project) {
     return errorResponse(res, 404, 'Project not found');
-  }
-
-  // Check if requester is team lead or workspace admin
-  const isTeamLead = project.team_lead.toString() === req.user._id.toString();
-  const workspaceMembership = await WorkspaceMember.findOne({
-    userId: req.user._id,
-    workspaceId: project.workspaceId,
-  });
-
-  if (!isTeamLead && (!workspaceMembership || workspaceMembership.role !== 'ADMIN')) {
-    return errorResponse(res, 403, 'Access denied');
   }
 
   // Check if user is member of workspace
@@ -254,20 +233,10 @@ export const addProjectMember = asyncHandler(async (req, res) => {
 export const removeProjectMember = asyncHandler(async (req, res) => {
   const { id: projectId, memberId } = req.params;
 
-  const project = await Project.findById(projectId);
+  // Project and permissions already checked by middleware
+  const project = req.project || await Project.findById(projectId);
   if (!project) {
     return errorResponse(res, 404, 'Project not found');
-  }
-
-  // Check if requester is team lead or workspace admin
-  const isTeamLead = project.team_lead.toString() === req.user._id.toString();
-  const workspaceMembership = await WorkspaceMember.findOne({
-    userId: req.user._id,
-    workspaceId: project.workspaceId,
-  });
-
-  if (!isTeamLead && (!workspaceMembership || workspaceMembership.role !== 'ADMIN')) {
-    return errorResponse(res, 403, 'Access denied');
   }
 
   // Cannot remove team lead

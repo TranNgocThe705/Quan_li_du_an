@@ -82,6 +82,7 @@ export const workspaceAPI = {
   updateWorkspace: (id, data) => API.put(`/workspaces/${id}`, data),
   deleteWorkspace: (id) => API.delete(`/workspaces/${id}`),
   addMember: (id, data) => API.post(`/workspaces/${id}/members`, data),
+  inviteMemberByEmail: (id, data) => API.post(`/workspaces/${id}/invite-member`, data),
   removeMember: (id, memberId) => API.delete(`/workspaces/${id}/members/${memberId}`),
   updateMemberRole: (id, memberId, data) => API.put(`/workspaces/${id}/members/${memberId}`, data),
 };
@@ -119,6 +120,27 @@ export const commentAPI = {
   createComment: (data) => API.post('/comments', data),
   updateComment: (id, data) => API.put(`/comments/${id}`, data),
   deleteComment: (id) => API.delete(`/comments/${id}`),
+};
+
+// Admin API
+export const adminAPI = {
+  getDashboard: () => API.get('/admin/dashboard'),
+  getAllUsers: (params = {}) => {
+    const query = new URLSearchParams(params);
+    return API.get(`/admin/users?${query}`);
+  },
+  getUserDetails: (id) => API.get(`/admin/users/${id}`),
+  deleteUser: (id) => API.delete(`/admin/users/${id}`),
+  getAllWorkspaces: (params = {}) => {
+    const query = new URLSearchParams(params);
+    return API.get(`/admin/workspaces?${query}`);
+  },
+  deleteWorkspace: (id) => API.delete(`/admin/workspaces/${id}`),
+  getAllProjects: (params = {}) => {
+    const query = new URLSearchParams(params);
+    return API.get(`/admin/projects?${query}`);
+  },
+  deleteProject: (id) => API.delete(`/admin/projects/${id}`),
 };
 
 export default API;
