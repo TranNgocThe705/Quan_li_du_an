@@ -146,6 +146,9 @@ export const adminAPI = {
       responseType: 'blob'
     });
   },
+  transferWorkspaceOwnership: (workspaceId, newOwnerId) => {
+    return API.put(`/workspaces/${workspaceId}/transfer-ownership`, { newOwnerId });
+  },
 };
 
 export default API;

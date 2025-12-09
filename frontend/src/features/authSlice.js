@@ -5,12 +5,19 @@ import { authAPI } from '../services/api';
 const user = JSON.parse(localStorage.getItem('user'));
 const token = localStorage.getItem('token');
 
+// Clean up if token exists but no user (invalid state)
+if (token && !user) {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+}
+
 const initialState = {
   user: user || null,
-  token: token || null,
+  token: (token && user) ? token : null,
   loading: false,
   error: null,
-  isAuthenticated: !!token,
+  // Only set authenticated if both token AND user exist
+  isAuthenticated: !!(token && user),
 };
 
 // Async thunks

@@ -4,6 +4,7 @@ import Project from '../models/Project.js';
 import ProjectMember from '../models/ProjectMember.js';
 import WorkspaceMember from '../models/WorkspaceMember.js';
 import Task from '../models/Task.js';
+import { notifyProjectMemberAdded } from '../utils/notificationHelper.js';
 
 // @desc    Get all projects in a workspace
 // @route   GET /api/projects?workspaceId=xxx
@@ -223,6 +224,13 @@ export const addProjectMember = asyncHandler(async (req, res) => {
     'userId',
     'name email image'
   );
+
+  // Send notification to the new member
+  await notifyProjectMemberAdded(userId, {
+    _id: project._id,
+    name: project.name,
+    workspaceId: project.workspaceId,
+  }, req.user._id);
 
   return successResponse(res, 201, 'Project member added successfully', populatedMember);
 });

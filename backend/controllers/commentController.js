@@ -3,6 +3,8 @@ import { successResponse, errorResponse } from '../utils/apiResponse.js';
 import Comment from '../models/Comment.js';
 import Task from '../models/Task.js';
 import ProjectMember from '../models/ProjectMember.js';
+import Project from '../models/Project.js';
+import { notifyTaskComment } from '../utils/notificationHelper.js';
 
 // @desc    Get all comments for a task
 // @route   GET /api/comments?taskId=xxx
@@ -70,6 +72,26 @@ export const createComment = asyncHandler(async (req, res) => {
     'userId',
     'name email image'
   );
+
+  // Send notification to task assignee
+  console.log('🎯 Preparing to send notification for comment');
+  const project = await Project.findById(task.projectId);
+  
+  // Don't send notification if you're commenting on your own task
+  if (task.assigneeId && task.assigneeId.toString() !== req.user._id.toString()) {
+    console.log('📧 Sending notification to assignee:', task.assigneeId);
+    await notifyTaskComment({
+      _id: task._id,
+      title: task.title,
+      assignedTo: task.assigneeId,
+      workspaceId: project?.workspaceId,
+      projectId: task.projectId,
+    }, {
+      _id: comment._id,
+    }, req.user._id);
+  } else {
+    console.log('⚠️ Not sending notification - commenting on own task');
+  }
 
   return successResponse(res, 201, 'Comment added successfully', populatedComment);
 });

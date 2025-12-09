@@ -10,8 +10,9 @@ import {
   removeMember,
   updateMemberRole,
   inviteMemberByEmail,
+  transferOwnership,
 } from '../controllers/workspaceController.js';
-import { protect } from '../middleware/auth.js';
+import { protect, isSystemAdmin } from '../middleware/auth.js';
 import { validate } from '../middleware/validation.js';
 import { 
   checkWorkspaceMember, 
@@ -47,6 +48,10 @@ const updateMemberRoleValidation = [
   body('role').isIn(['ADMIN', 'MEMBER']).withMessage('Invalid role'),
 ];
 
+const transferOwnershipValidation = [
+  body('newOwnerId').notEmpty().withMessage('New owner ID is required'),
+];
+
 // Workspace routes
 router.get('/', protect, getWorkspaces);
 router.post('/', protect, createWorkspaceValidation, validate, createWorkspace);
@@ -59,5 +64,8 @@ router.post('/:id/members', protect, checkWorkspaceAdmin, addMemberValidation, v
 router.post('/:id/invite-member', protect, checkWorkspaceAdmin, inviteMemberByEmailValidation, validate, inviteMemberByEmail);
 router.delete('/:id/members/:memberId', protect, checkWorkspaceAdmin, removeMember);
 router.put('/:id/members/:memberId', protect, checkWorkspaceAdmin, updateMemberRoleValidation, validate, updateMemberRole);
+
+// Ownership transfer (System Admin only)
+router.put('/:id/transfer-ownership', protect, isSystemAdmin, transferOwnershipValidation, validate, transferOwnership);
 
 export default router;

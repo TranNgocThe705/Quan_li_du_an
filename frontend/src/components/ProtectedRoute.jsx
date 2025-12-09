@@ -1,8 +1,8 @@
 import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useSelector((state) => state.auth);
+const ProtectedRoute = ({ children, allowAdmins = true }) => {
+  const { isAuthenticated, loading, user } = useSelector((state) => state.auth);
 
   if (loading) {
     return (
@@ -17,6 +17,11 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // If this route doesn't allow admins and user is a system admin, redirect to admin
+  if (!allowAdmins && user?.isSystemAdmin) {
+    return <Navigate to="/admin" replace />;
   }
 
   return children;

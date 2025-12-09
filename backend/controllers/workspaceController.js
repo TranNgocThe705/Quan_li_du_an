@@ -4,6 +4,7 @@ import Workspace from '../models/Workspace.js';
 import WorkspaceMember from '../models/WorkspaceMember.js';
 import Project from '../models/Project.js';
 import { WorkspaceRole } from '../config/constants.js';
+import { notifyWorkspaceMemberAdded } from '../utils/notificationHelper.js';
 
 // @desc    Get all workspaces for current user
 // @route   GET /api/workspaces
@@ -230,6 +231,12 @@ export const addMember = asyncHandler(async (req, res) => {
     'name email image'
   );
 
+  // Send notification to the new member
+  await notifyWorkspaceMemberAdded(userId, {
+    _id: workspace._id,
+    name: workspace.name,
+  }, req.user._id);
+
   return successResponse(res, 201, 'Member added successfully', populatedMember);
 });
 
@@ -295,4 +302,45 @@ export const updateMemberRole = asyncHandler(async (req, res) => {
   );
 
   return successResponse(res, 200, 'Member role updated successfully', updatedMember);
+});
+
+// @desc    Transfer workspace ownership
+// @route   PUT /api/workspaces/:id/transfer-ownership
+// @access  Private (System Admin only)
+export const transferOwnership = asyncHandler(async (req, res) => {
+  const { id: workspaceId } = req.params;
+  const { newOwnerId } = req.body;
+
+  // Find workspace
+  const workspace = await Workspace.findById(workspaceId);
+  if (!workspace) {
+    return errorResponse(res, 404, 'Workspace not found');
+  }
+
+  // Only system admins can transfer ownership (checked by middleware)
+
+  // Check if new owner is a member of workspace
+  const newOwnerMember = await WorkspaceMember.findOne({
+    userId: newOwnerId,
+    workspaceId,
+  });
+
+  if (!newOwnerMember) {
+    return errorResponse(res, 400, 'New owner must be a workspace member');
+  }
+
+  // Update workspace owner
+  workspace.ownerId = newOwnerId;
+  await workspace.save();
+
+  // Update new owner role to ADMIN if not already
+  if (newOwnerMember.role !== WorkspaceRole.ADMIN) {
+    newOwnerMember.role = WorkspaceRole.ADMIN;
+    await newOwnerMember.save();
+  }
+
+  const updatedWorkspace = await Workspace.findById(workspaceId)
+    .populate('ownerId', 'name email image');
+
+  return successResponse(res, 200, 'Workspace ownership transferred successfully', updatedWorkspace);
 });

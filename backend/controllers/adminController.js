@@ -230,6 +230,53 @@ export const getUserDetails = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Update user info
+// @route   PUT /api/admin/users/:id
+// @access  Private (System Admin)
+export const updateUserInfo = asyncHandler(async (req, res) => {
+  const { name, email, password, isSystemAdmin } = req.body;
+
+  // Prevent changing own account
+  if (req.params.id === req.user._id.toString()) {
+    return errorResponse(res, 400, 'Cannot edit your own account');
+  }
+
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return errorResponse(res, 404, 'User not found');
+  }
+
+  // Check if email already exists (if being changed)
+  if (email && email !== user.email) {
+    const emailExists = await User.findOne({ email });
+    if (emailExists) {
+      return errorResponse(res, 400, 'Email already in use');
+    }
+    user.email = email;
+  }
+
+  // Update fields
+  if (name) user.name = name;
+  if (password && password.trim()) {
+    user.password = password; // Will be hashed by pre-save middleware
+  }
+  if (typeof isSystemAdmin === 'boolean') {
+    user.isSystemAdmin = isSystemAdmin;
+  }
+
+  await user.save();
+
+  return successResponse(res, 200, 'User updated successfully', {
+    user: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      isSystemAdmin: user.isSystemAdmin,
+    },
+  });
+});
+
 // @desc    Update user role
 // @route   PUT /api/admin/users/:id/role
 // @access  Private (Super Admin)

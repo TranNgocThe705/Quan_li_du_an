@@ -5,6 +5,8 @@ import authReducer from '../features/authSlice'
 import projectReducer from '../features/projectSlice'
 import taskReducer from '../features/taskSlice'
 import permissionReducer from '../features/permissionSlice'
+import notificationReducer from '../features/notificationSlice'
+import adminReducer from '../features/adminSlice'
 
 export const store = configureStore({
     reducer: {
@@ -14,5 +16,7 @@ export const store = configureStore({
         project: projectReducer,
         task: taskReducer,
         permissions: permissionReducer,
+        notification: notificationReducer,
+        admin: adminReducer,
     },
 })

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { toggleTheme } from '../features/themeSlice'
 import { logout } from '../features/authSlice'
+import NotificationBell from './NotificationBell'
 
 const Navbar = ({ setIsSidebarOpen }) => {
 
@@ -182,6 +183,9 @@ const Navbar = ({ setIsSidebarOpen }) => {
 
                 {/* Right section */}
                 <div className="flex items-center gap-3">
+
+                    {/* Notification Bell */}
+                    <NotificationBell />
 
                     {/* Language Toggle */}
                     <div className="relative group">

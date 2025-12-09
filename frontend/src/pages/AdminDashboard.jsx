@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { Users, Briefcase, CheckSquare, Building2, Activity, LogOut, Globe, UserCog, Trash2, Ban, CheckCircle, Sun, Moon, TrendingUp, TrendingDown, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { Users, Briefcase, CheckSquare, Building2, Activity, LogOut, Globe, UserCog, Trash2, Ban, CheckCircle, Sun, Moon, TrendingUp, TrendingDown, Download, FileSpreadsheet, FileText, Edit, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { adminAPI } from '../services/api';
 import { logout } from '../features/authSlice';
@@ -12,6 +12,7 @@ import LineChart from '../components/charts/LineChart';
 import BarChart from '../components/charts/BarChart';
 import AreaChart from '../components/charts/AreaChart';
 import { downloadReportFromAPI } from '../utils/exportUtils';
+import EditUserModal from '../components/EditUserModal';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -31,6 +32,9 @@ const AdminDashboard = () => {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const exportMenuRef = useRef(null);
+  const [editUserModal, setEditUserModal] = useState({ show: false, user: null });
+  const [transferOwnershipModal, setTransferOwnershipModal] = useState({ show: false, workspace: null });
+  const [allUsers, setAllUsers] = useState([]);
 
   const handleExportReport = async (format) => {
     try {
@@ -133,6 +137,18 @@ const AdminDashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, navigate, activeTab]);
 
+  const handleEditUser = (user) => {
+    setEditUserModal({ show: true, user });
+  };
+
+  const handleCloseEditModal = () => {
+    setEditUserModal({ show: false, user: null });
+  };
+
+  const handleEditSuccess = () => {
+    fetchUsers();
+  };
+
   const handleDeleteUser = async (userId) => {
     if (!window.confirm(t('admin.confirmDeleteUser'))) return;
     
@@ -166,6 +182,39 @@ const AdminDashboard = () => {
       fetchProjects();
     } catch (error) {
       toast.error(error.response?.data?.message || t('admin.errorDeletingProject'));
+    }
+  };
+
+  const handleOpenTransferOwnership = async (workspace) => {
+    try {
+      // Fetch all users for the dropdown
+      const response = await adminAPI.getAllUsers();
+      setAllUsers(response.data.data?.users || []);
+      setTransferOwnershipModal({ show: true, workspace, newOwnerId: '' });
+    } catch {
+      toast.error('Không thể tải danh sách người dùng');
+    }
+  };
+
+  const handleTransferOwnership = async () => {
+    const { workspace, newOwnerId } = transferOwnershipModal;
+    
+    if (!newOwnerId) {
+      toast.error('Vui lòng chọn chủ sở hữu mới');
+      return;
+    }
+
+    if (!window.confirm(`Bạn có chắc muốn chuyển quyền sở hữu workspace "${workspace.name}" cho người dùng mới?`)) {
+      return;
+    }
+
+    try {
+      await adminAPI.transferWorkspaceOwnership(workspace._id, newOwnerId);
+      toast.success('Đã chuyển quyền sở hữu workspace thành công!');
+      setTransferOwnershipModal({ show: false, workspace: null, newOwnerId: '' });
+      fetchWorkspaces();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể chuyển quyền sở hữu');
     }
   };
 
@@ -728,15 +777,28 @@ const AdminDashboard = () => {
                           {new Date(usr.createdAt).toLocaleDateString('vi-VN')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          {usr._id !== user._id && !usr.isSystemAdmin && (
-                            <button
-                              onClick={() => handleDeleteUser(usr._id)}
-                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                              title={t('admin.deleteUser')}
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          )}
+                          <div className="flex items-center justify-end gap-2">
+                            {usr._id !== user._id && (
+                              <>
+                                <button
+                                  onClick={() => handleEditUser(usr)}
+                                  className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                                  title={t('admin.editUser')}
+                                >
+                                  <Edit className="w-5 h-5" />
+                                </button>
+                                {!usr.isSystemAdmin && (
+                                  <button
+                                    onClick={() => handleDeleteUser(usr._id)}
+                                    className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                    title={t('admin.deleteUser')}
+                                  >
+                                    <Trash2 className="w-5 h-5" />
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -794,13 +856,22 @@ const AdminDashboard = () => {
                           </p>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleDeleteWorkspace(ws._id)}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        title={t('admin.deleteWorkspace')}
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleOpenTransferOwnership(ws)}
+                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                          title="Chuyển quyền sở hữu"
+                        >
+                          <UserCog className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteWorkspace(ws._id)}
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                          title={t('admin.deleteWorkspace')}
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
                     {ws.description && (
                       <p className="mt-4 text-sm text-gray-600 dark:text-zinc-400">
@@ -930,6 +1001,96 @@ const AdminDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Edit User Modal */}
+      {editUserModal.show && (
+        <EditUserModal
+          user={editUserModal.user}
+          onClose={handleCloseEditModal}
+          onSuccess={handleEditSuccess}
+        />
+      )}
+
+      {/* Transfer Ownership Modal */}
+      {transferOwnershipModal.show && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-xl w-full max-w-md border border-gray-200 dark:border-zinc-800">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-zinc-800">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <UserCog size={20} />
+                Chuyển Quyền Sở Hữu Workspace
+              </h3>
+              <button 
+                onClick={() => setTransferOwnershipModal({ show: false, workspace: null, newOwnerId: '' })}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
+                  ⚠️ Cảnh báo quan trọng
+                </p>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                  Chủ sở hữu mới sẽ có toàn quyền quản lý workspace này. Hành động không thể hoàn tác.
+                </p>
+              </div>
+
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  Workspace: <span className="text-blue-600 dark:text-blue-400">{transferOwnershipModal.workspace?.name}</span>
+                </p>
+                <p className="text-sm text-gray-600 dark:text-zinc-400 mt-1">
+                  Chủ sở hữu hiện tại: {transferOwnershipModal.workspace?.ownerId?.name} ({transferOwnershipModal.workspace?.ownerId?.email})
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2">
+                  Chọn chủ sở hữu mới *
+                </label>
+                <select
+                  value={transferOwnershipModal.newOwnerId || ''}
+                  onChange={(e) => setTransferOwnershipModal({
+                    ...transferOwnershipModal,
+                    newOwnerId: e.target.value
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Chọn người dùng --</option>
+                  {allUsers
+                    .filter(u => u._id !== transferOwnershipModal.workspace?.ownerId?._id)
+                    .map(u => (
+                      <option key={u._id} value={u._id}>
+                        {u.name} ({u.email}) {u.isSystemAdmin && '- System Admin'}
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-zinc-800">
+              <button
+                onClick={() => setTransferOwnershipModal({ show: false, workspace: null, newOwnerId: '' })}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleTransferOwnership}
+                disabled={!transferOwnershipModal.newOwnerId}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <UserCog size={16} />
+                Xác Nhận Chuyển Quyền
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

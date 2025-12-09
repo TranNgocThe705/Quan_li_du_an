@@ -3,6 +3,7 @@ import {
   getAdminDashboard,
   getAllUsers,
   getUserDetails,
+  updateUserInfo,
   updateUserRole,
   updateUserStatus,
   deleteUser,
@@ -27,6 +28,7 @@ router.get('/dashboard', isSystemAdmin, getAdminDashboard);
 // User management routes
 router.get('/users', isSystemAdmin, getAllUsers);
 router.get('/users/:id', isSystemAdmin, getUserDetails);
+router.put('/users/:id', isSystemAdmin, updateUserInfo);
 router.put('/users/:id/role', isSuperAdmin, updateUserRole);
 router.put('/users/:id/status', isSystemAdmin, updateUserStatus);
 router.delete('/users/:id', isSuperAdmin, deleteUser);

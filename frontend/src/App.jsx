@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Layout from "./pages/Layout";
 import { Toaster } from "react-hot-toast";
@@ -20,33 +20,56 @@ import { getMe } from "./features/authSlice";
 
 const App = () => {
     const dispatch = useDispatch();
-    const { token, user } = useSelector(state => state.auth);
+    const { token, isAuthenticated, loading } = useSelector(state => state.auth);
+    const [initializing, setInitializing] = useState(!!token);
 
-    // Fetch user data once if token exists but user is not loaded
+    // Validate token on app load
     useEffect(() => {
-        if (token && !user) {
-            dispatch(getMe());
-        }
-    }, [dispatch, token, user]);
+        const validateAuth = async () => {
+            if (token) {
+                // If token exists, validate it by fetching user
+                try {
+                    await dispatch(getMe()).unwrap();
+                } catch (error) {
+                    // Token is invalid, it will be cleared by the reducer
+                    console.log('Token validation failed:', error);
+                } finally {
+                    setInitializing(false);
+                }
+            } else {
+                setInitializing(false);
+            }
+        };
+
+        validateAuth();
+    }, [dispatch, token]);
+
+    // Show loading spinner while validating token
+    if (initializing || loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-900">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600 dark:text-zinc-400">Đang tải...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <>
             <Toaster position="top-right" />
             <Routes>
                 {/* Public routes */}
-                <Route path="/login" element={
-                    token ? <Navigate to="/" replace /> : <Login />
-                } />
-                <Route path="/register" element={
-                    token ? <Navigate to="/" replace /> : <Register />
-                } />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
                 <Route path="/auth/google/success" element={<GoogleAuthCallback />} />
                 
-                {/* Protected routes */}
+                {/* Protected routes - Only for regular users (not system admins) */}
                 <Route
                     path="/"
                     element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowAdmins={false}>
                             <Layout />
                         </ProtectedRoute>
                     }
@@ -71,7 +94,7 @@ const App = () => {
                 />
 
                 {/* Catch all - redirect to login if not authenticated, otherwise home */}
-                <Route path="*" element={<Navigate to={token ? "/" : "/login"} replace />} />
+                <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} replace />} />
             </Routes>
         </>
     );

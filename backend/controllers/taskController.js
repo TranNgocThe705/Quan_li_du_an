@@ -3,6 +3,7 @@ import { successResponse, errorResponse } from '../utils/apiResponse.js';
 import Task from '../models/Task.js';
 import Project from '../models/Project.js';
 import ProjectMember from '../models/ProjectMember.js';
+import { notifyTaskAssignment, notifyTaskUpdate, notifyTaskCompletion } from '../utils/notificationHelper.js';
 
 // @desc    Get all tasks for a project
 // @route   GET /api/tasks?projectId=xxx
@@ -107,6 +108,18 @@ export const createTask = asyncHandler(async (req, res) => {
     .populate('assigneeId', 'name email image')
     .populate('projectId', 'name');
 
+  // Send notification to assignee
+  if (assigneeId && assigneeId.toString() !== req.user._id.toString()) {
+    await notifyTaskAssignment(assigneeId, {
+      _id: task._id,
+      title: task.title,
+      priority: task.priority,
+      dueDate: task.due_date,
+      workspaceId: project.workspaceId,
+      projectId: project._id,
+    }, req.user._id);
+  }
+
   return successResponse(res, 201, 'Task created successfully', populatedTask);
 });
 
@@ -154,6 +167,27 @@ export const updateTask = asyncHandler(async (req, res) => {
   const populatedTask = await Task.findById(updatedTask._id)
     .populate('assigneeId', 'name email image')
     .populate('projectId', 'name');
+
+  // Send notification if task was updated by someone else
+  const project = await Project.findById(task.projectId);
+  await notifyTaskUpdate({
+    _id: task._id,
+    title: task.title,
+    assignedTo: task.assigneeId,
+    workspaceId: project?.workspaceId,
+    projectId: task.projectId,
+  }, req.user._id, req.body);
+
+  // If task status changed to completed, notify creator
+  if (req.body.status === 'COMPLETED' && task.status === 'COMPLETED') {
+    await notifyTaskCompletion({
+      _id: task._id,
+      title: task.title,
+      createdBy: task.createdBy,
+      workspaceId: project?.workspaceId,
+      projectId: task.projectId,
+    }, req.user._id);
+  }
 
   return successResponse(res, 200, 'Task updated successfully', populatedTask);
 });

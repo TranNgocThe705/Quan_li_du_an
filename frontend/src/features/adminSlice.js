@@ -27,6 +27,19 @@ export const getUserDetails = createAsyncThunk(
   }
 );
 
+// Update user info
+export const updateUserInfo = createAsyncThunk(
+  'admin/updateUserInfo',
+  async ({ userId, name, email, isSystemAdmin }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/admin/users/${userId}`, { name, email, isSystemAdmin });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update user info');
+    }
+  }
+);
+
 // Update user role
 export const updateUserRole = createAsyncThunk(
   'admin/updateUserRole',
@@ -166,6 +179,15 @@ const adminSlice = createSlice({
       .addCase(getUserDetails.rejected, (state, action) => {
         state.loading.users = false;
         state.error = action.payload;
+      })
+
+      // Update user info
+      .addCase(updateUserInfo.fulfilled, (state, action) => {
+        const updatedUser = action.payload.data.user;
+        const index = state.users.findIndex((u) => u._id === updatedUser._id);
+        if (index !== -1) {
+          state.users[index] = { ...state.users[index], ...updatedUser };
+        }
       })
 
       // Update user role
