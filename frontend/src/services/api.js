@@ -2,8 +2,11 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 // Create axios instance
+const baseURL = import.meta.env.VITE_API_URL || 'https://backend.enroseze.id.vn/api';
+console.log('🌐 API Base URL:', baseURL);
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://backend.enroseze.id.vn',
+  baseURL: baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -89,29 +92,78 @@ export const workspaceAPI = {
 
 // Project API
 export const projectAPI = {
-  getProjects: (workspaceId) => API.get(`/projects?workspaceId=${workspaceId}`),
-  getProjectById: (id) => API.get(`/projects/${id}`),
+  getProjects: (workspaceId) => {
+    const validId = typeof workspaceId === 'string' ? workspaceId : workspaceId?.toString();
+    return API.get(`/projects?workspaceId=${validId}`);
+  },
+  getProjectById: (id) => {
+    const validId = typeof id === 'string' ? id : id?.toString();
+    if (!validId || validId === '[object Object]') {
+      console.error('❌ Invalid project ID in getProjectById:', id);
+      return Promise.reject(new Error('Invalid project ID'));
+    }
+    console.log('📡 getProjectById URL:', `/projects/${validId}`);
+    return API.get(`/projects/${validId}`);
+  },
   createProject: (data) => API.post('/projects', data),
-  updateProject: (id, data) => API.put(`/projects/${id}`, data),
-  deleteProject: (id) => API.delete(`/projects/${id}`),
-  addMember: (id, data) => API.post(`/projects/${id}/members`, data),
-  removeMember: (id, memberId) => API.delete(`/projects/${id}/members/${memberId}`),
+  updateProject: (id, data) => {
+    const validId = typeof id === 'string' ? id : id?.toString();
+    return API.put(`/projects/${validId}`, data);
+  },
+  deleteProject: (id) => {
+    const validId = typeof id === 'string' ? id : id?.toString();
+    return API.delete(`/projects/${validId}`);
+  },
+  addMember: (id, data) => {
+    const validId = typeof id === 'string' ? id : id?.toString();
+    return API.post(`/projects/${validId}/members`, data);
+  },
+  removeMember: (id, memberId) => {
+    const validId = typeof id === 'string' ? id : id?.toString();
+    const validMemberId = typeof memberId === 'string' ? memberId : memberId?.toString();
+    return API.delete(`/projects/${validId}/members/${validMemberId}`);
+  },
 };
 
 // Task API
 export const taskAPI = {
   getTasks: (projectId, filters = {}) => {
-    const params = new URLSearchParams({ projectId, ...filters });
+    // Ensure projectId is string, not object
+    const validProjectId = typeof projectId === 'string' ? projectId : projectId?.toString();
+    
+    if (!validProjectId || validProjectId === '[object Object]') {
+      console.error('❌ Invalid projectId in getTasks:', projectId);
+      return Promise.reject(new Error('Invalid project ID'));
+    }
+    
+    const params = new URLSearchParams({ projectId: validProjectId, ...filters });
+    console.log('📡 getTasks URL:', `/tasks?${params}`);
     return API.get(`/tasks?${params}`);
   },
   getMyTasks: (filters = {}) => {
     const params = new URLSearchParams(filters);
     return API.get(`/tasks/my-tasks?${params}`);
   },
-  getTaskById: (id) => API.get(`/tasks/${id}`),
-  createTask: (data) => API.post('/tasks', data),
-  updateTask: (id, data) => API.put(`/tasks/${id}`, data),
-  deleteTask: (id) => API.delete(`/tasks/${id}`),
+  getTaskById: (id) => {
+    const validId = typeof id === 'string' ? id : id?.toString();
+    if (!validId || validId === '[object Object]') {
+      console.error('❌ Invalid task ID:', id);
+      return Promise.reject(new Error('Invalid task ID'));
+    }
+    return API.get(`/tasks/${validId}`);
+  },
+  createTask: (data) => {
+    console.log('📝 Creating task with data:', data);
+    return API.post('/tasks', data);
+  },
+  updateTask: (id, data) => {
+    const validId = typeof id === 'string' ? id : id?.toString();
+    return API.put(`/tasks/${validId}`, data);
+  },
+  deleteTask: (id) => {
+    const validId = typeof id === 'string' ? id : id?.toString();
+    return API.delete(`/tasks/${validId}`);
+  },
 };
 
 // Comment API

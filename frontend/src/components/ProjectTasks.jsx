@@ -161,8 +161,13 @@ const ProjectTasks = ({ tasks }) => {
                                         const { icon: Icon, color } = typeIcons[task.type] || {};
                                         const { background, prioritycolor } = priorityTexts[task.priority] || {};
 
+                                        // Extract projectId safely (could be object or string)
+                                        const projectId = typeof task.projectId === 'string' 
+                                            ? task.projectId 
+                                            : task.projectId?._id || task.projectId;
+
                                         return (
-                                            <tr key={task._id} onClick={() => navigate(`/taskDetails?projectId=${task.projectId}&taskId=${task._id}`)} className=" border-t border-zinc-300 dark:border-zinc-800 group hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all cursor-pointer" >
+                                            <tr key={task._id} onClick={() => navigate(`/taskDetails?projectId=${projectId}&taskId=${task._id}`)} className=" border-t border-zinc-300 dark:border-zinc-800 group hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all cursor-pointer" >
                                                 <td onClick={e => e.stopPropagation()} className="pl-2 pr-1">
                                                     <input type="checkbox" className="size-3 accent-zinc-600 dark:accent-zinc-500" onChange={() => selectedTasks.includes(task._id) ? setSelectedTasks(selectedTasks.filter((i) => i !== task._id)) : setSelectedTasks((prev) => [...prev, task._id])} checked={selectedTasks.includes(task._id)} />
                                                 </td>

@@ -104,10 +104,29 @@ const NotificationBell = () => {
       navigate(notification.actionUrl);
       setIsOpen(false);
     } else if (notification.entityType === 'TASK' && notification.entityId) {
-      navigate(`/taskDetails?id=${notification.entityId}`);
+      // TaskDetails sử dụng taskId và projectId
+      const rawProjectId = notification.projectId || notification.metadata?.projectId;
+      // Extract ID if it's an object
+      const projectId = typeof rawProjectId === 'string' 
+        ? rawProjectId 
+        : rawProjectId?._id || rawProjectId;
+        
+      if (projectId && projectId !== '[object Object]') {
+        navigate(`/taskDetails?taskId=${notification.entityId}&projectId=${projectId}`);
+      } else {
+        navigate(`/taskDetails?taskId=${notification.entityId}`);
+      }
       setIsOpen(false);
     } else if (notification.entityType === 'PROJECT' && notification.entityId) {
-      navigate(`/projectsDetail?id=${notification.entityId}&tab=overview`);
+      // Extract project ID if it's an object
+      const projectId = typeof notification.entityId === 'string'
+        ? notification.entityId
+        : notification.entityId?._id || notification.entityId;
+        
+      navigate(`/projectsDetail?id=${projectId}&tab=overview`);
+      setIsOpen(false);
+    } else if (notification.entityType === 'WORKSPACE' && notification.entityId) {
+      navigate(`/dashboard`);
       setIsOpen(false);
     }
   };

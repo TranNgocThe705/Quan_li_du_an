@@ -35,11 +35,15 @@ const taskSchema = new mongoose.Schema(
     assigneeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      default: null,
     },
     due_date: {
       type: Date,
       required: [true, 'Please provide a due date'],
+    },
+    completedAt: {
+      type: Date,
+      default: null,
     },
   },
   {

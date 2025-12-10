@@ -340,9 +340,12 @@ export default function TaskDetails() {
                         </label>
                         <div className="flex items-center gap-2">
                             <img 
-                                src={task?.assigneeId?.image || 'https://via.placeholder.com/40'} 
+                                src={task?.assigneeId?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(task?.assigneeId?.name || 'User')}&background=64748B&color=fff&size=40`} 
                                 alt={task?.assigneeId?.name}
                                 className="w-8 h-8 rounded-full"
+                                onError={(e) => {
+                                    e.target.src = `https://ui-avatars.com/api/?name=U&background=64748B&color=fff&size=40`;
+                                }}
                             />
                             <span className="text-zinc-700 dark:text-zinc-300">{task?.assigneeId?.name || t('taskDetails.unassigned')}</span>
                         </div>

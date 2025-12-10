@@ -91,6 +91,18 @@ export const createProject = asyncHandler(async (req, res) => {
     return errorResponse(res, 403, 'Access denied. You are not a member of this workspace');
   }
 
+  // Validate team_lead is workspace member (if different from creator)
+  if (team_lead && team_lead !== req.user._id.toString()) {
+    const teamLeadMember = await WorkspaceMember.findOne({
+      userId: team_lead,
+      workspaceId,
+    });
+
+    if (!teamLeadMember) {
+      return errorResponse(res, 400, 'Team lead must be a workspace member');
+    }
+  }
+
   // Create project
   const project = await Project.create({
     name,

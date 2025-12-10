@@ -13,6 +13,8 @@ import Project from '../models/Project.js';
 import ProjectMember from '../models/ProjectMember.js';
 import Task from '../models/Task.js';
 import Comment from '../models/Comment.js';
+import Notification from '../models/Notification.js';
+import ActivityLog from '../models/ActivityLog.js';
 
 // Connect to MongoDB
 const connectDB = async () => {
@@ -39,6 +41,8 @@ const seedData = async () => {
     await ProjectMember.deleteMany({});
     await Task.deleteMany({});
     await Comment.deleteMany({});
+    await Notification.deleteMany({});
+    await ActivityLog.deleteMany({});
 
     // Create users
     console.log('👥 Creating users...');
@@ -50,50 +54,62 @@ const seedData = async () => {
         name: 'Nguyễn Văn Admin',
         email: 'admin@gmail.com',
         password,
-        image: 'https://i.pravatar.cc/150?img=1',
+        image: 'https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff',
         isSystemAdmin: true, // System Admin - có quyền truy cập trang admin
       },
       {
         name: 'Trần Thị Manager',
         email: 'manager@gmail.com',
         password,
-        image: 'https://i.pravatar.cc/150?img=2',
+        image: 'https://ui-avatars.com/api/?name=Manager&background=DC2626&color=fff',
       },
       {
         name: 'Lê Văn Lead',
         email: 'lead@gmail.com',
         password,
-        image: 'https://i.pravatar.cc/150?img=3',
+        image: 'https://ui-avatars.com/api/?name=Lead&background=7C3AED&color=fff',
       },
       {
         name: 'Phạm Thị Member',
         email: 'member@gmail.com',
         password,
-        image: 'https://i.pravatar.cc/150?img=4',
+        image: 'https://ui-avatars.com/api/?name=Member&background=F59E0B&color=fff',
       },
       {
         name: 'Hoàng Văn Dev',
         email: 'dev@gmail.com',
         password,
-        image: 'https://i.pravatar.cc/150?img=5',
+        image: 'https://ui-avatars.com/api/?name=Dev&background=10B981&color=fff',
       },
       {
         name: 'Võ Thị Designer',
         email: 'designer@gmail.com',
         password,
-        image: 'https://i.pravatar.cc/150?img=6',
+        image: 'https://ui-avatars.com/api/?name=Designer&background=EC4899&color=fff',
       },
       {
         name: 'Đặng Văn Tester',
         email: 'tester@gmail.com',
         password,
-        image: 'https://i.pravatar.cc/150?img=7',
+        image: 'https://ui-avatars.com/api/?name=Tester&background=6366F1&color=fff',
       },
       {
         name: 'Bùi Thị Viewer',
         email: 'viewer@gmail.com',
         password,
-        image: 'https://i.pravatar.cc/150?img=8',
+        image: 'https://ui-avatars.com/api/?name=Viewer&background=64748B&color=fff',
+      },
+      {
+        name: 'Ngô Văn Client',
+        email: 'client@gmail.com',
+        password,
+        image: 'https://ui-avatars.com/api/?name=Client&background=F97316&color=fff',
+      },
+      {
+        name: 'Mai Thị Product',
+        email: 'product@gmail.com',
+        password,
+        image: 'https://ui-avatars.com/api/?name=Product&background=14B8A6&color=fff',
       },
     ]);
 
@@ -104,10 +120,17 @@ const seedData = async () => {
     const workspaces = await Workspace.create([
       {
         name: 'Công Ty TNHH Phần Mềm ABC',
-        slug: 'abc-software',
-        description: 'Công ty phát triển phần mềm và ứng dụng di động',
+        slug: 'abc-software-' + Date.now(),
+        description: 'Công ty phát triển phần mềm và ứng dụng di động, chuyên về web và mobile app',
         ownerId: users[0]._id, // admin@gmail.com
         image_url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop',
+      },
+      {
+        name: 'Startup Tech Solutions',
+        slug: 'startup-tech-' + Date.now(),
+        description: 'Startup công nghệ tập trung vào AI và Machine Learning',
+        ownerId: users[1]._id, // manager@gmail.com
+        image_url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&h=300&fit=crop',
       },
     ]);
 
@@ -117,14 +140,20 @@ const seedData = async () => {
     console.log('👤 Adding workspace members...');
     await WorkspaceMember.create([
       // Công Ty ABC Software members
-      { userId: users[0]._id, workspaceId: workspaces[0]._id, role: 'ADMIN' },   // admin@gmail.com - Owner/Admin
-      { userId: users[1]._id, workspaceId: workspaces[0]._id, role: 'ADMIN' },   // manager@gmail.com - Manager/Admin
-      { userId: users[2]._id, workspaceId: workspaces[0]._id, role: 'MEMBER' },  // lead@gmail.com - Member (Team Lead ở project level)
-      { userId: users[3]._id, workspaceId: workspaces[0]._id, role: 'MEMBER' },  // member@gmail.com - Member
-      { userId: users[4]._id, workspaceId: workspaces[0]._id, role: 'MEMBER' },  // dev@gmail.com - Member
-      { userId: users[5]._id, workspaceId: workspaces[0]._id, role: 'MEMBER' },  // designer@gmail.com - Member
-      { userId: users[6]._id, workspaceId: workspaces[0]._id, role: 'MEMBER' },  // tester@gmail.com - Member
-      { userId: users[7]._id, workspaceId: workspaces[0]._id, role: 'MEMBER' },  // viewer@gmail.com - Member (Viewer ở project level)
+      { userId: users[0]._id, workspaceId: workspaces[0]._id, role: 'ADMIN' },   // admin@gmail.com
+      { userId: users[1]._id, workspaceId: workspaces[0]._id, role: 'ADMIN' },   // manager@gmail.com
+      { userId: users[2]._id, workspaceId: workspaces[0]._id, role: 'MEMBER' },  // lead@gmail.com
+      { userId: users[3]._id, workspaceId: workspaces[0]._id, role: 'MEMBER' },  // member@gmail.com
+      { userId: users[4]._id, workspaceId: workspaces[0]._id, role: 'MEMBER' },  // dev@gmail.com
+      { userId: users[5]._id, workspaceId: workspaces[0]._id, role: 'MEMBER' },  // designer@gmail.com
+      { userId: users[6]._id, workspaceId: workspaces[0]._id, role: 'MEMBER' },  // tester@gmail.com
+      { userId: users[7]._id, workspaceId: workspaces[0]._id, role: 'MEMBER' },  // viewer@gmail.com
+      { userId: users[8]._id, workspaceId: workspaces[0]._id, role: 'MEMBER' },  // client@gmail.com
+      
+      // Startup Tech members
+      { userId: users[1]._id, workspaceId: workspaces[1]._id, role: 'ADMIN' },   // manager@gmail.com - Owner
+      { userId: users[4]._id, workspaceId: workspaces[1]._id, role: 'MEMBER' },  // dev@gmail.com
+      { userId: users[9]._id, workspaceId: workspaces[1]._id, role: 'MEMBER' },  // product@gmail.com
     ]);
 
     console.log('✅ Workspace members added');
@@ -132,6 +161,7 @@ const seedData = async () => {
     // Create projects
     console.log('📁 Creating projects...');
     const projects = await Project.create([
+      // Workspace 1 - ABC Software
       {
         name: 'Hệ Thống Quản Lý Bán Hàng',
         description: 'Phát triển hệ thống quản lý bán hàng trực tuyến cho chuỗi cửa hàng bán lẻ. Bao gồm quản lý kho, đơn hàng, khách hàng và báo cáo thống kê.',
@@ -141,7 +171,7 @@ const seedData = async () => {
         end_date: new Date('2026-03-31'),
         team_lead: users[2]._id, // lead@gmail.com
         workspaceId: workspaces[0]._id,
-        progress: 35,
+        progress: 45,
       },
       {
         name: 'App Di Động Đặt Đồ Ăn',
@@ -152,40 +182,64 @@ const seedData = async () => {
         end_date: new Date('2026-04-30'),
         team_lead: users[2]._id, // lead@gmail.com
         workspaceId: workspaces[0]._id,
-        progress: 25,
+        progress: 38,
       },
       {
-        name: 'Website Tin Tức',
-        description: 'Website tin tức với CMS quản lý nội dung, hệ thống comment và phân quyền tác giả.',
-        priority: 'MEDIUM',
+        name: 'Website E-commerce',
+        description: 'Website bán hàng online với tính năng giỏ hàng, thanh toán, quản lý đơn hàng và tích hợp vận chuyển.',
+        priority: 'HIGH',
         status: 'ACTIVE',
-        start_date: new Date('2025-11-15'),
+        start_date: new Date('2025-09-15'),
         end_date: new Date('2026-02-28'),
         team_lead: users[1]._id, // manager@gmail.com
         workspaceId: workspaces[0]._id,
-        progress: 50,
+        progress: 62,
       },
       {
-        name: 'Hệ Thống Nhân Sự (HRM)',
-        description: 'Phần mềm quản lý nhân sự bao gồm chấm công, tính lương, quản lý phép và đánh giá nhân viên.',
+        name: 'Hệ Thống CRM',
+        description: 'Customer Relationship Management - Quản lý khách hàng, leads, opportunities và sales pipeline.',
         priority: 'MEDIUM',
-        status: 'PLANNING',
-        start_date: new Date('2025-12-15'),
-        end_date: new Date('2026-06-30'),
+        status: 'ACTIVE',
+        start_date: new Date('2025-12-01'),
+        end_date: new Date('2026-05-31'),
         team_lead: users[2]._id, // lead@gmail.com
         workspaceId: workspaces[0]._id,
-        progress: 5,
+        progress: 15,
+      },
+      {
+        name: 'Mobile Banking App',
+        description: 'Ứng dụng ngân hàng di động với tính năng chuyển khoản, thanh toán hóa đơn và quản lý tài chính cá nhân.',
+        priority: 'HIGH',
+        status: 'PLANNING',
+        start_date: new Date('2026-01-15'),
+        end_date: new Date('2026-08-31'),
+        team_lead: users[2]._id, // lead@gmail.com
+        workspaceId: workspaces[0]._id,
+        progress: 8,
       },
       {
         name: 'Dashboard Analytics',
         description: 'Dashboard báo cáo và phân tích dữ liệu với charts và real-time monitoring.',
-        priority: 'LOW',
+        priority: 'MEDIUM',
         status: 'COMPLETED',
         start_date: new Date('2025-08-01'),
-        end_date: new Date('2025-10-31'),
+        end_date: new Date('2025-11-30'),
         team_lead: users[1]._id, // manager@gmail.com
         workspaceId: workspaces[0]._id,
         progress: 100,
+      },
+      
+      // Workspace 2 - Startup Tech
+      {
+        name: 'AI Chatbot Platform',
+        description: 'Nền tảng chatbot AI cho doanh nghiệp với NLP và machine learning.',
+        priority: 'HIGH',
+        status: 'ACTIVE',
+        start_date: new Date('2025-10-15'),
+        end_date: new Date('2026-04-30'),
+        team_lead: users[9]._id, // product@gmail.com
+        workspaceId: workspaces[1]._id,
+        progress: 28,
       },
     ]);
 
@@ -600,23 +654,384 @@ const seedData = async () => {
 
     console.log('✅ Comments created');
 
-    console.log('\n🎉 Dữ liệu đã được tạo thành công!\n');
-    console.log('🏢 Workspace: Công Ty TNHH Phần Mềm ABC');
-    console.log('📁 Projects: 5 dự án (Quản lý bán hàng, App đặt đồ ăn, Website tin tức, HRM, Dashboard)');
-    console.log('✅ Tasks: 28 tasks với nhiều trạng thái khác nhau');
-    console.log('💬 Comments: 16 comments từ các thành viên\n');
-    console.log('👥 Tài khoản test (password: 123456):\n');
-    console.log('   🔴 QUẢN LÝ:');
-    console.log('   - admin@gmail.com (Admin - Chủ workspace)');
-    console.log('   - manager@gmail.com (Manager - Admin workspace)\n');
-    console.log('   🔵 TEAM MEMBERS:');
-    console.log('   - lead@gmail.com (Team Lead - Quản lý projects)');
-    console.log('   - member@gmail.com (Member - Frontend Dev)');
-    console.log('   - dev@gmail.com (Member - Backend Dev)');
-    console.log('   - designer@gmail.com (Member - UI/UX Designer)');
-    console.log('   - tester@gmail.com (Member - QA Tester)');
-    console.log('   - viewer@gmail.com (Viewer - Stakeholder)\n');
-    console.log('📖 Chi tiết phân quyền: backend/TESTING_PERMISSIONS.md\n');
+    // Create notifications
+    console.log('🔔 Creating notifications...');
+    await Notification.create([
+      // Notifications cho admin@gmail.com
+      {
+        userId: users[0]._id, // admin@gmail.com
+        fromUserId: users[1]._id, // manager@gmail.com
+        type: 'PROJECT_UPDATED',
+        title: 'Dự án đã được cập nhật',
+        message: 'Trần Thị Manager đã cập nhật thông tin dự án Website Tin Tức',
+        entityType: 'PROJECT',
+        entityId: projects[2]._id,
+        workspaceId: workspaces[0]._id,
+        projectId: projects[2]._id,
+        isRead: false,
+      },
+      {
+        userId: users[0]._id,
+        fromUserId: users[2]._id, // lead@gmail.com
+        type: 'TASK_COMPLETED',
+        title: 'Task đã hoàn thành',
+        message: 'Lê Văn Lead đã hoàn thành task "Thiết kế database schema"',
+        entityType: 'TASK',
+        entityId: tasks[0]._id,
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+        isRead: true,
+      },
+
+      // Notifications cho manager@gmail.com
+      {
+        userId: users[1]._id, // manager@gmail.com
+        fromUserId: users[4]._id, // dev@gmail.com
+        type: 'TASK_UPDATED',
+        title: 'Task đã được cập nhật',
+        message: 'Hoàng Văn Dev đã cập nhật trạng thái task "Xây dựng CMS quản lý bài viết"',
+        entityType: 'TASK',
+        entityId: tasks[14]._id,
+        workspaceId: workspaces[0]._id,
+        projectId: projects[2]._id,
+        isRead: false,
+      },
+
+      // Notifications cho lead@gmail.com
+      {
+        userId: users[2]._id, // lead@gmail.com
+        fromUserId: users[4]._id,
+        type: 'TASK_COMMENT',
+        title: 'Comment mới trên task',
+        message: 'Hoàng Văn Dev đã comment trên task "Xây dựng API quản lý sản phẩm"',
+        entityType: 'TASK',
+        entityId: tasks[1]._id,
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+        isRead: false,
+      },
+      {
+        userId: users[2]._id,
+        type: 'TASK_DUE_SOON',
+        title: 'Task sắp đến hạn',
+        message: 'Task "Phân tích yêu cầu hệ thống" sẽ đến hạn trong 3 ngày',
+        entityType: 'TASK',
+        entityId: tasks[19]._id,
+        workspaceId: workspaces[0]._id,
+        projectId: projects[3]._id,
+        isRead: false,
+      },
+
+      // Notifications cho member@gmail.com
+      {
+        userId: users[3]._id, // member@gmail.com
+        fromUserId: users[2]._id,
+        type: 'TASK_ASSIGNED',
+        title: 'Task mới được phân công',
+        message: 'Lê Văn Lead đã phân công task "Phát triển module đơn hàng" cho bạn',
+        entityType: 'TASK',
+        entityId: tasks[3]._id,
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+        isRead: false,
+      },
+      {
+        userId: users[3]._id,
+        fromUserId: users[2]._id,
+        type: 'TASK_ASSIGNED',
+        title: 'Task mới được phân công',
+        message: 'Lê Văn Lead đã phân công task "Xây dựng màn hình đăng nhập" cho bạn',
+        entityType: 'TASK',
+        entityId: tasks[9]._id,
+        workspaceId: workspaces[0]._id,
+        projectId: projects[1]._id,
+        isRead: true,
+      },
+
+      // Notifications cho dev@gmail.com
+      {
+        userId: users[4]._id, // dev@gmail.com
+        fromUserId: users[2]._id,
+        type: 'TASK_ASSIGNED',
+        title: 'Task mới được phân công',
+        message: 'Lê Văn Lead đã phân công task "Fix bug hiển thị tồn kho" cho bạn',
+        entityType: 'TASK',
+        entityId: tasks[6]._id,
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+        isRead: false,
+      },
+      {
+        userId: users[4]._id,
+        fromUserId: users[5]._id, // designer@gmail.com
+        type: 'TASK_COMMENT',
+        title: 'Comment mới trên task',
+        message: 'Võ Thị Designer đã comment trên task "Thiết kế giao diện dashboard"',
+        entityType: 'TASK',
+        entityId: tasks[2]._id,
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+        isRead: false,
+      },
+
+      // Notifications cho designer@gmail.com
+      {
+        userId: users[5]._id, // designer@gmail.com
+        fromUserId: users[2]._id,
+        type: 'PROJECT_MEMBER_ADDED',
+        title: 'Được thêm vào dự án',
+        message: 'Bạn đã được thêm vào dự án "App Di Động Đặt Đồ Ăn"',
+        entityType: 'PROJECT',
+        entityId: projects[1]._id,
+        workspaceId: workspaces[0]._id,
+        projectId: projects[1]._id,
+        isRead: true,
+      },
+
+      // Notifications cho tester@gmail.com
+      {
+        userId: users[6]._id, // tester@gmail.com
+        fromUserId: users[2]._id,
+        type: 'TASK_ASSIGNED',
+        title: 'Task mới được phân công',
+        message: 'Lê Văn Lead đã phân công task "Test chức năng báo cáo doanh thu" cho bạn',
+        entityType: 'TASK',
+        entityId: tasks[5]._id,
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+        isRead: false,
+      },
+
+      // Notifications cho viewer@gmail.com
+      {
+        userId: users[7]._id, // viewer@gmail.com
+        fromUserId: users[0]._id,
+        type: 'WORKSPACE_MEMBER_ADDED',
+        title: 'Được thêm vào workspace',
+        message: 'Bạn đã được thêm vào workspace "Công Ty TNHH Phần Mềm ABC"',
+        entityType: 'WORKSPACE',
+        entityId: workspaces[0]._id,
+        workspaceId: workspaces[0]._id,
+        isRead: true,
+      },
+    ]);
+
+    console.log('✅ Notifications created');
+
+    // Create activity logs
+    console.log('📊 Creating activity logs...');
+    await ActivityLog.create([
+      // Workspace activities
+      {
+        userId: users[0]._id,
+        action: 'WORKSPACE_CREATED',
+        entityType: 'WORKSPACE',
+        entityId: workspaces[0]._id,
+        description: 'Tạo workspace "Công Ty TNHH Phần Mềm ABC"',
+        workspaceId: workspaces[0]._id,
+      },
+      {
+        userId: users[0]._id,
+        action: 'WORKSPACE_MEMBER_ADDED',
+        entityType: 'WORKSPACE',
+        entityId: workspaces[0]._id,
+        description: 'Thêm Trần Thị Manager vào workspace',
+        workspaceId: workspaces[0]._id,
+        metadata: { memberName: 'Trần Thị Manager', memberEmail: 'manager@gmail.com' },
+      },
+
+      // Project activities
+      {
+        userId: users[0]._id,
+        action: 'PROJECT_CREATED',
+        entityType: 'PROJECT',
+        entityId: projects[0]._id,
+        description: 'Tạo dự án "Hệ Thống Quản Lý Bán Hàng"',
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+      },
+      {
+        userId: users[2]._id,
+        action: 'PROJECT_MEMBER_ADDED',
+        entityType: 'PROJECT',
+        entityId: projects[0]._id,
+        description: 'Thêm Hoàng Văn Dev vào dự án',
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+        metadata: { memberName: 'Hoàng Văn Dev', role: 'MEMBER' },
+      },
+      {
+        userId: users[1]._id,
+        action: 'PROJECT_UPDATED',
+        entityType: 'PROJECT',
+        entityId: projects[2]._id,
+        description: 'Cập nhật thông tin dự án "Website Tin Tức"',
+        workspaceId: workspaces[0]._id,
+        projectId: projects[2]._id,
+      },
+
+      // Task activities
+      {
+        userId: users[2]._id,
+        action: 'TASK_CREATED',
+        entityType: 'TASK',
+        entityId: tasks[0]._id,
+        description: 'Tạo task "Thiết kế database schema"',
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+      },
+      {
+        userId: users[4]._id,
+        action: 'TASK_STATUS_CHANGED',
+        entityType: 'TASK',
+        entityId: tasks[0]._id,
+        description: 'Thay đổi trạng thái task từ IN_PROGRESS sang DONE',
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+        metadata: { oldStatus: 'IN_PROGRESS', newStatus: 'DONE' },
+      },
+      {
+        userId: users[2]._id,
+        action: 'TASK_ASSIGNED',
+        entityType: 'TASK',
+        entityId: tasks[3]._id,
+        description: 'Phân công task "Phát triển module đơn hàng" cho Phạm Thị Member',
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+        metadata: { assigneeName: 'Phạm Thị Member' },
+      },
+      {
+        userId: users[4]._id,
+        action: 'TASK_UPDATED',
+        entityType: 'TASK',
+        entityId: tasks[1]._id,
+        description: 'Cập nhật task "Xây dựng API quản lý sản phẩm"',
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+      },
+
+      // Comment activities
+      {
+        userId: users[4]._id,
+        action: 'COMMENT_ADDED',
+        entityType: 'TASK',
+        entityId: tasks[0]._id,
+        description: 'Thêm comment trên task "Thiết kế database schema"',
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+      },
+      {
+        userId: users[2]._id,
+        action: 'COMMENT_ADDED',
+        entityType: 'TASK',
+        entityId: tasks[0]._id,
+        description: 'Thêm comment trên task "Thiết kế database schema"',
+        workspaceId: workspaces[0]._id,
+        projectId: projects[0]._id,
+      },
+
+      // More task activities
+      {
+        userId: users[3]._id,
+        action: 'TASK_STATUS_CHANGED',
+        entityType: 'TASK',
+        entityId: tasks[9]._id,
+        description: 'Thay đổi trạng thái task từ TODO sang IN_PROGRESS',
+        workspaceId: workspaces[0]._id,
+        projectId: projects[1]._id,
+        metadata: { oldStatus: 'TODO', newStatus: 'IN_PROGRESS' },
+      },
+      {
+        userId: users[4]._id,
+        action: 'TASK_COMPLETED',
+        entityType: 'TASK',
+        entityId: tasks[7]._id,
+        description: 'Hoàn thành task "Setup React Native project"',
+        workspaceId: workspaces[0]._id,
+        projectId: projects[1]._id,
+      },
+    ]);
+
+    console.log('✅ Activity logs created');
+
+    console.log('\n🎉 DỮ LIỆU MỚI ĐÃ ĐƯỢC TẠO THÀNH CÔNG!\n');
+    console.log('📊 THỐNG KÊ DỮ LIỆU:');
+    console.log('='.repeat(65));
+    console.log('👥 Users: 10 tài khoản với roles khác nhau');
+    console.log('🏢 Workspaces: 2 workspaces');
+    console.log('   ├─ Công Ty TNHH Phần Mềm ABC (9 members)');
+    console.log('   └─ Startup Tech Solutions (3 members)');
+    console.log('📁 Projects: 7 dự án đa dạng');
+    console.log('   ├─ Hệ Thống Quản Lý Bán Hàng (HIGH - ACTIVE - 45%)');
+    console.log('   ├─ App Di Động Đặt Đồ Ăn (HIGH - ACTIVE - 38%)');
+    console.log('   ├─ Website E-commerce (HIGH - ACTIVE - 62%)');
+    console.log('   ├─ Hệ Thống CRM (MEDIUM - ACTIVE - 15%)');
+    console.log('   ├─ Mobile Banking App (HIGH - PLANNING - 8%)');
+    console.log('   ├─ Dashboard Analytics (MEDIUM - COMPLETED - 100%)');
+    console.log('   └─ AI Chatbot Platform (HIGH - ACTIVE - 28%)');
+    console.log('✅ Tasks: 28 tasks (TODO, IN_PROGRESS, DONE)');
+    console.log('💬 Comments: 16 comments từ các thành viên');
+    console.log('🔔 Notifications: 13 thông báo thực tế');
+    console.log('📊 Activity Logs: 13 hoạt động được ghi nhận');
+    console.log('='.repeat(65));
+    console.log('\n👥 TÀI KHOẢN TEST (Tất cả password: 123456):');
+    console.log('\n🔴 QUẢN LÝ & ADMIN:');
+    console.log('   ✦ admin@gmail.com - System Admin');
+    console.log('     • Toàn quyền hệ thống');
+    console.log('     • Truy cập /admin panel');
+    console.log('     • Quản lý tất cả workspaces');
+    console.log('   ✦ manager@gmail.com - Manager/Admin');
+    console.log('     • Admin cả 2 workspaces');
+    console.log('     • Quản lý projects & members');
+    console.log('\n🔵 DEVELOPMENT TEAM:');
+    console.log('   ✦ lead@gmail.com - Team Lead');
+    console.log('     • Quản lý 4 projects chính');
+    console.log('     • Phân công & review tasks');
+    console.log('   ✦ dev@gmail.com - Backend Developer');
+    console.log('     • Có 12 tasks được assign');
+    console.log('     • Member ở cả 2 workspaces');
+    console.log('   ✦ member@gmail.com - Frontend Developer');
+    console.log('     • Có 5 tasks active');
+    console.log('   ✦ designer@gmail.com - UI/UX Designer');
+    console.log('     • Thiết kế giao diện & mockup');
+    console.log('   ✦ tester@gmail.com - QA Tester');
+    console.log('     • Test & report bugs');
+    console.log('\n🟢 STAKEHOLDERS:');
+    console.log('   ✦ viewer@gmail.com - Viewer (Read-only)');
+    console.log('     • Chỉ xem, không chỉnh sửa');
+    console.log('   ✦ client@gmail.com - Client');
+    console.log('     • Đại diện khách hàng');
+    console.log('   ✦ product@gmail.com - Product Owner');
+    console.log('     • Quản lý AI Chatbot project');
+    console.log('\n🎯 TÍNH NĂNG HOẠT ĐỘNG HOÀN CHỈNH:');
+    console.log('   ✓ Multi-Workspace Support (2 workspaces riêng biệt)');
+    console.log('   ✓ Authentication & Authorization (JWT)');
+    console.log('   ✓ Role-based Access Control (Admin, Lead, Member, Viewer)');
+    console.log('   ✓ Project Management (7 projects đa dạng)');
+    console.log('   ✓ Task Assignment & Tracking (28 tasks với assignee)');
+    console.log('   ✓ Comments & Collaboration (16 comments thực tế)');
+    console.log('   ✓ Real-time Notifications (13 notifications)');
+    console.log('   ✓ Activity Logs & Audit Trail');
+    console.log('   ✓ Team Members Management');
+    console.log('   ✓ Dashboard & Analytics');
+    console.log('   ✓ Permission Checks trên mọi actions');
+    console.log('\n📖 TÀI LIỆU & HƯỚNG DẪN:');
+    console.log('   → backend/TESTING_PERMISSIONS.md - Chi tiết phân quyền');
+    console.log('   → backend/PERMISSION_SYSTEM.md - Hệ thống permissions');
+    console.log('   → NOTIFICATION_SYSTEM.md - Hệ thống thông báo');
+    console.log('   → SEED_DATA_SUMMARY.md - Tóm tắt dữ liệu test');
+    console.log('='.repeat(65));
+    console.log('\n💡 HƯỚNG DẪN TEST:');
+    console.log('   1️⃣  ĐĂNG XUẤT tài khoản hiện tại (nếu có)');
+    console.log('   2️⃣  XÓA CACHE trình duyệt: Ctrl + Shift + Delete');
+    console.log('   3️⃣  ĐĂNG NHẬP lại với dev@gmail.com (password: 123456)');
+    console.log('   4️⃣  Click vào NOTIFICATION BELL 🔔');
+    console.log('   5️⃣  Click vào notification → Sẽ thấy assignee đúng');
+    console.log('\n🔥 TEST ĐA NGƯỜI DÙNG:');
+    console.log('   • Tab 1: admin@gmail.com - Tạo tasks mới');
+    console.log('   • Tab 2 (Incognito): dev@gmail.com - Nhận notifications');
+    console.log('   • Kiểm tra realtime updates');
+    console.log('\n✨ MỌI THỨ ĐÃ SẴN SÀNG! Happy Testing! 🚀\n');
 
     process.exit(0);
   } catch (error) {

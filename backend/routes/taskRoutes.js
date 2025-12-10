@@ -22,7 +22,7 @@ const router = express.Router();
 const createTaskValidation = [
   body('projectId').notEmpty().withMessage('Project ID is required'),
   body('title').trim().notEmpty().withMessage('Task title is required'),
-  body('assigneeId').notEmpty().withMessage('Assignee ID is required'),
+  body('assigneeId').optional(),
   body('due_date').isISO8601().withMessage('Valid due date is required'),
   body('status')
     .optional()

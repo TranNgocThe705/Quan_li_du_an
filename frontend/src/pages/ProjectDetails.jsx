@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeftIcon, PlusIcon, SettingsIcon, BarChart3Icon, CalendarIcon, FileStackIcon, ZapIcon } from "lucide-react";
+import { ArrowLeftIcon, PlusIcon, SettingsIcon, BarChart3Icon, CalendarIcon, FileStackIcon, ZapIcon, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
 import ProjectAnalytics from "../components/ProjectAnalytics";
 import ProjectSettings from "../components/ProjectSettings";
 import CreateTaskDialog from "../components/CreateTaskDialog";
 import ProjectCalendar from "../components/ProjectCalendar";
 import ProjectTasks from "../components/ProjectTasks";
+import AIProjectInsights from "../components/AIProjectInsights";
 import { fetchProjectById } from "../features/projectSlice";
 import { fetchTasks } from "../features/taskSlice";
 
@@ -32,10 +34,20 @@ export default function ProjectDetail() {
 
     useEffect(() => {
         if (id) {
+            console.log('🔍 ProjectDetails ID from URL:', id, typeof id);
+            
+            // Validate ID is string
+            if (typeof id !== 'string' || id === '[object Object]') {
+                console.error('❌ Invalid project ID:', id);
+                toast.error('Project ID không hợp lệ');
+                navigate('/projects');
+                return;
+            }
+            
             dispatch(fetchProjectById(id));
             dispatch(fetchTasks({ projectId: id }));
         }
-    }, [dispatch, id]);
+    }, [dispatch, id, navigate]);
 
     const statusColors = {
         PLANNING: "bg-zinc-200 text-zinc-900 dark:bg-zinc-600 dark:text-zinc-200",
@@ -113,6 +125,7 @@ export default function ProjectDetail() {
                         { key: "tasks", label: t('projectDetail.tasks'), icon: FileStackIcon },
                         { key: "calendar", label: t('projectDetail.calendar'), icon: CalendarIcon },
                         { key: "analytics", label: t('projectDetail.analytics'), icon: BarChart3Icon },
+                        { key: "ai-insights", label: "AI Insights", icon: Sparkles },
                         { key: "settings", label: t('projectDetail.settings'), icon: SettingsIcon },
                     ].map((tabItem) => (
                         <button key={tabItem.key} onClick={() => { setActiveTab(tabItem.key); setSearchParams({ id: id, tab: tabItem.key }) }} className={`flex items-center gap-2 px-4 py-2 text-sm transition-all ${activeTab === tabItem.key ? "bg-zinc-100 dark:bg-zinc-800/80" : "hover:bg-zinc-50 dark:hover:bg-zinc-700"}`} >
@@ -131,6 +144,11 @@ export default function ProjectDetail() {
                     {activeTab === "analytics" && (
                         <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
                             <ProjectAnalytics tasks={tasks} project={project} />
+                        </div>
+                    )}
+                    {activeTab === "ai-insights" && (
+                        <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
+                            <AIProjectInsights projectId={id} />
                         </div>
                     )}
                     {activeTab === "calendar" && (

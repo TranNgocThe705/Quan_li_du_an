@@ -16,6 +16,7 @@ import GoogleAuthCallback from "./pages/GoogleAuthCallback";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import AIChatWidget from "./components/AIChatWidget";
 import { getMe } from "./features/authSlice";
 
 const App = () => {
@@ -96,6 +97,9 @@ const App = () => {
                 {/* Catch all - redirect to login if not authenticated, otherwise home */}
                 <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} replace />} />
             </Routes>
+
+            {/* AI Chat Widget - Hiển thị khi đã đăng nhập */}
+            {isAuthenticated && <AIChatWidget />}
         </>
     );
 };

@@ -26,7 +26,18 @@ export const fetchProjectById = createAsyncThunk(
     'project/fetchProjectById',
     async (id, { rejectWithValue }) => {
         try {
-            const response = await projectAPI.getProjectById(id);
+            // Validate and extract ID
+            const validId = typeof id === 'string' ? id : id?._id || id?.toString();
+            
+            if (!validId || validId === '[object Object]') {
+                console.error('❌ fetchProjectById: Invalid ID', id);
+                const message = 'ID dự án không hợp lệ';
+                toast.error(message);
+                return rejectWithValue(message);
+            }
+            
+            console.log('✅ fetchProjectById with ID:', validId);
+            const response = await projectAPI.getProjectById(validId);
             return response.data.data;
         } catch (error) {
             const message = error.response?.data?.message || 'Không thể tải chi tiết dự án';

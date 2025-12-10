@@ -62,9 +62,10 @@ const Profile = () => {
                     {/* Avatar Section */}
                     <div className="flex flex-col items-center gap-4">
                         <img
-                            src={formData.image || 'https://i.pravatar.cc/150?img=1'}
+                            src={formData.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name || 'User')}&background=0D8ABC&color=fff&size=128`}
                             alt="Profile"
                             className="w-32 h-32 rounded-full border-4 border-gray-200 dark:border-zinc-700 object-cover"
+                            onError={(e) => e.target.src = 'https://ui-avatars.com/api/?name=U&background=0D8ABC&color=fff&size=128'}
                         />
                         {isEditing && (
                             <button

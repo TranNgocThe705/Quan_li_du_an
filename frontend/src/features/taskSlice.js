@@ -16,7 +16,18 @@ export const fetchTasks = createAsyncThunk(
     'task/fetchTasks',
     async ({ projectId, filters }, { rejectWithValue }) => {
         try {
-            const response = await taskAPI.getTasks(projectId, filters);
+            // Validate and extract projectId
+            const validProjectId = typeof projectId === 'string' 
+                ? projectId 
+                : projectId?._id || projectId?.toString();
+            
+            if (!validProjectId || validProjectId === '[object Object]') {
+                console.error('❌ fetchTasks: Invalid projectId', projectId);
+                return rejectWithValue('Project ID không hợp lệ');
+            }
+            
+            console.log('✅ fetchTasks with projectId:', validProjectId);
+            const response = await taskAPI.getTasks(validProjectId, filters);
             return response.data.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch tasks');
@@ -52,10 +63,13 @@ export const createTask = createAsyncThunk(
     'task/createTask',
     async (data, { rejectWithValue }) => {
         try {
+            console.log('🚀 Creating task with data:', data);
             const response = await taskAPI.createTask(data);
-            toast.success('Task created successfully');
+            console.log('✅ Task created response:', response.data);
+            // Don't show toast here, let the component handle it
             return response.data.data;
         } catch (error) {
+            console.error('❌ Create task error:', error.response?.data);
             return rejectWithValue(error.response?.data?.message || 'Failed to create task');
         }
     }

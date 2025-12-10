@@ -82,14 +82,34 @@ export const createTask = asyncHandler(async (req, res) => {
     return errorResponse(res, 404, 'Project not found');
   }
 
-  // Check if assignee is project member
-  const isAssigneeMember = await ProjectMember.findOne({
-    userId: assigneeId,
+  // Log incoming data for debugging
+  console.log('📝 Creating task with data:', {
     projectId,
+    title,
+    assigneeId,
+    status,
+    priority,
+    type
   });
 
-  if (!isAssigneeMember) {
-    return errorResponse(res, 400, 'Assignee must be a project member');
+  // Check if assignee is project member (only if assigneeId is provided)
+  if (assigneeId) {
+    const isAssigneeMember = await ProjectMember.findOne({
+      userId: assigneeId,
+      projectId,
+    });
+
+    if (!isAssigneeMember) {
+      console.error('❌ Assignee validation failed:', {
+        assigneeId,
+        projectId,
+        found: !!isAssigneeMember
+      });
+      return errorResponse(res, 400, 'Assignee must be a project member');
+    }
+    console.log('✅ Assignee is project member:', assigneeId);
+  } else {
+    console.log('⚠️ No assignee provided for task');
   }
 
   // Create task
@@ -102,6 +122,12 @@ export const createTask = asyncHandler(async (req, res) => {
     priority,
     assigneeId,
     due_date,
+  });
+
+  console.log('✅ Task created successfully:', {
+    taskId: task._id,
+    assigneeId: task.assigneeId,
+    title: task.title
   });
 
   const populatedTask = await Task.findById(task._id)
@@ -150,6 +176,15 @@ export const updateTask = asyncHandler(async (req, res) => {
       task[field] = req.body[field];
     }
   });
+
+  // Tự động set completedAt khi status chuyển sang DONE
+  if (req.body.status === 'DONE' && task.status !== 'DONE') {
+    task.completedAt = new Date();
+  }
+  // Reset completedAt nếu chuyển từ DONE sang status khác
+  if (req.body.status && req.body.status !== 'DONE' && task.status === 'DONE') {
+    task.completedAt = null;
+  }
 
   // If assignee is being changed, verify they're a project member
   if (req.body.assigneeId) {

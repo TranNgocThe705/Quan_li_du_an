@@ -224,9 +224,10 @@ const Navbar = ({ setIsSidebarOpen }) => {
                             className="flex items-center gap-2 p-1.5 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-zinc-800"
                         >
                             <img 
-                                src={user?.image || 'https://i.pravatar.cc/150?img=1'} 
+                                src={user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=10B981&color=fff&size=40`} 
                                 alt="User Avatar" 
-                                className="size-8 rounded-full border-2 border-gray-200 dark:border-zinc-700" 
+                                className="size-8 rounded-full border-2 border-gray-200 dark:border-zinc-700"
+                                onError={(e) => e.target.src = 'https://ui-avatars.com/api/?name=U&background=10B981&color=fff&size=40'} 
                             />
                             <span className="hidden sm:block text-sm font-medium text-gray-900 dark:text-white">
                                 {user?.name || 'User'}

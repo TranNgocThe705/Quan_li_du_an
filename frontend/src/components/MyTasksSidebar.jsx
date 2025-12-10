@@ -54,8 +54,14 @@ function MyTasksSidebar() {
                                 Chưa có công việc nào
                             </div>
                         ) : (
-                            myTasks.map((task) => (
-                                <Link key={task._id} to={`/taskDetails?projectId=${task.project}&taskId=${task._id}`} className="w-full rounded-lg transition-all duration-200 text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white" >
+                            myTasks.map((task) => {
+                                // Extract projectId safely
+                                const projectId = typeof task.project === 'string' 
+                                    ? task.project 
+                                    : task.project?._id || task.project;
+                                
+                                return (
+                                <Link key={task._id} to={`/taskDetails?projectId=${projectId}&taskId=${task._id}`} className="w-full rounded-lg transition-all duration-200 text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white" >
                                     <div className="flex items-center gap-2 px-3 py-2 w-full min-w-0">
                                         <div className={`w-2 h-2 rounded-full ${getTaskStatusColor(task.status)} flex-shrink-0`} />
                                         <div className="flex-1 min-w-0">
@@ -68,7 +74,8 @@ function MyTasksSidebar() {
                                         </div>
                                     </div>
                                 </Link>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>
