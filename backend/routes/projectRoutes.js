@@ -14,7 +14,8 @@ import { validate } from '../middleware/validation.js';
 import { 
   checkWorkspaceAccessFromProject,
   checkProjectMember,
-  checkProjectManagePermission 
+  checkProjectManagePermission,
+  checkProjectViewPermission
 } from '../middleware/checkPermission.js';
 
 const router = express.Router();
@@ -52,7 +53,7 @@ const addMemberValidation = [
 // Project routes
 router.get('/', protect, getProjects); // Query param: workspaceId (checked in controller)
 router.post('/', protect, createProjectValidation, validate, createProject); // workspaceId in body (checked in controller)
-router.get('/:id', protect, checkProjectMember, getProjectById);
+router.get('/:id', protect, checkProjectViewPermission, getProjectById);
 router.put('/:id', protect, checkProjectManagePermission, updateProjectValidation, validate, updateProject);
 router.delete('/:id', protect, checkProjectManagePermission, deleteProject);
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { UsersIcon, Search, UserPlus, Shield, Activity } from "lucide-react";
 import InviteMemberDialog from "../components/InviteMemberDialog";
+import RoleBadge from "../components/RoleBadge";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { fetchWorkspaceById } from "../features/workspaceSlice";
@@ -168,14 +169,12 @@ const Team = () => {
                                                 {user.userId?.email || 'N/A'}
                                             </td>
                                             <td className="px-6 py-2.5 whitespace-nowrap">
-                                                <span
-                                                    className={`px-2 py-1 text-xs rounded-md ${user.role === "ADMIN"
-                                                            ? "bg-purple-100 dark:bg-purple-500/20 text-purple-500 dark:text-purple-400"
-                                                            : "bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300"
-                                                        }`}
-                                                >
-                                                    {user.role || "MEMBER"}
-                                                </span>
+                                                <RoleBadge 
+                                                    role={user.role || "MEMBER"} 
+                                                    isOwner={currentWorkspace?.ownerId === user.userId?._id}
+                                                    type="workspace"
+                                                    size="sm"
+                                                />
                                             </td>
                                         </tr>
                                     ))}
@@ -205,15 +204,13 @@ const Team = () => {
                                             </p>
                                         </div>
                                     </div>
-                                    <div>
-                                        <span
-                                            className={`px-2 py-1 text-xs rounded-md ${user.role === "ADMIN"
-                                                    ? "bg-purple-100 dark:bg-purple-500/20 text-purple-500 dark:text-purple-400"
-                                                    : "bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300"
-                                                }`}
-                                        >
-                                            {user.role || "MEMBER"}
-                                        </span>
+                                    <div className="mt-2">
+                                        <RoleBadge 
+                                            role={user.role || "MEMBER"} 
+                                            isOwner={currentWorkspace?.ownerId === user.userId?._id}
+                                            type="workspace"
+                                            size="sm"
+                                        />
                                     </div>
                                 </div>
                             ))}

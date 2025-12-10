@@ -290,3 +290,49 @@ export const checkWorkspaceAccessFromProject = asyncHandler(async (req, res, nex
   req.workspaceMembership = workspaceMembership;
   next();
 });
+
+/**
+ * Check if user can view project (project member OR workspace admin/owner)
+ * More permissive than checkProjectMember for read-only access
+ */
+export const checkProjectViewPermission = asyncHandler(async (req, res, next) => {
+  const projectId = req.params.projectId || req.params.id || req.body.projectId;
+
+  if (!projectId) {
+    return errorResponse(res, 400, 'Project ID is required');
+  }
+
+  const project = await Project.findById(projectId);
+
+  if (!project) {
+    return errorResponse(res, 404, 'Project not found');
+  }
+
+  // Check if user is workspace admin or owner first
+  const workspaceMembership = await WorkspaceMember.findOne({
+    userId: req.user._id,
+    workspaceId: project.workspaceId,
+  });
+
+  if (workspaceMembership && workspaceMembership.role === WorkspaceRole.ADMIN) {
+    req.project = project;
+    req.workspaceMembership = workspaceMembership;
+    req.hasViewPermission = true;
+    return next();
+  }
+
+  // If not workspace admin, check if user is project member
+  const projectMembership = await ProjectMember.findOne({
+    userId: req.user._id,
+    projectId: projectId,
+  }).populate('projectId');
+
+  if (!projectMembership) {
+    return errorResponse(res, 403, 'Access denied. You are not a member of this project or workspace admin');
+  }
+
+  req.projectMembership = projectMembership;
+  req.project = projectMembership.projectId;
+  req.hasViewPermission = true;
+  next();
+});

@@ -344,5 +344,126 @@
       "MENTIONED_IN_TASK": "Bạn được nhắc đến trong công việc",
       "SYSTEM_ANNOUNCEMENT": "Thông báo hệ thống"
     }
+  },
+  "role": {
+    "owner": "Chủ Sở Hữu",
+    "admin": "Quản Trị",
+    "member": "Thành Viên",
+    "lead": "Trưởng Nhóm",
+    "viewer": "Người Xem",
+    "ownerTooltip": {
+      "title": "Chủ Sở Hữu Workspace",
+      "perm1": "Toàn quyền quản lý workspace",
+      "perm2": "Xóa workspace",
+      "perm3": "Quản lý tất cả thành viên và dự án",
+      "perm4": "Thay đổi mọi cài đặt"
+    },
+    "adminTooltip": {
+      "title": "Quản Trị Viên",
+      "perm1": "Mời và xóa thành viên",
+      "perm2": "Quản lý tất cả dự án",
+      "perm3": "Cập nhật workspace",
+      "perm4": "Không thể xóa workspace"
+    },
+    "memberTooltip": {
+      "title": "Thành Viên",
+      "perm1": "Xem workspace và dự án",
+      "perm2": "Tham gia dự án được giao",
+      "perm3": "Không thể mời thành viên mới"
+    },
+    "leadTooltip": {
+      "title": "Trưởng Nhóm Dự Án",
+      "perm1": "Quản lý dự án",
+      "perm2": "Thêm/xóa thành viên dự án",
+      "perm3": "Quản lý tất cả công việc"
+    },
+    "viewerTooltip": {
+      "title": "Người Xem",
+      "perm1": "Chỉ xem dự án",
+      "perm2": "Không thể chỉnh sửa"
+    }
+  },
+  "permission": {
+    "yourRole": "Vai trò của bạn",
+    "viewPermissions": "Xem quyền chi tiết",
+    "noAccess": "Không có quyền truy cập",
+    "noAccessDesc": "Bạn không có quyền truy cập vào khu vực này",
+    "insufficientPermissions": "Bạn không có đủ quyền để xem nội dung này",
+    "perms": {
+      "view_workspace": "Xem workspace",
+      "update_workspace": "Cập nhật workspace",
+      "delete_workspace": "Xóa workspace",
+      "manage_members": "Quản lý thành viên",
+      "invite_members": "Mời thành viên",
+      "remove_members": "Xóa thành viên",
+      "update_member_roles": "Cập nhật vai trò",
+      "create_projects": "Tạo dự án",
+      "manage_all_projects": "Quản lý tất cả dự án",
+      "manage_all_tasks": "Quản lý tất cả công việc",
+      "view_project": "Xem dự án",
+      "update_project": "Cập nhật dự án",
+      "delete_project": "Xóa dự án",
+      "manage_project_members": "Quản lý thành viên dự án",
+      "create_tasks": "Tạo công việc",
+      "view_tasks": "Xem công việc",
+      "update_tasks": "Cập nhật công việc",
+      "delete_tasks": "Xóa công việc"
+    },
+    "requiresRole": "Yêu cầu",
+    "reasons": {
+      "no_permission": "Bạn không có quyền thực hiện hành động này",
+      "admin_only": "Chỉ quản trị viên mới có thể thực hiện",
+      "owner_only": "Chỉ chủ sở hữu mới có thể thực hiện",
+      "lead_only": "Chỉ trưởng nhóm mới có thể thực hiện",
+      "not_member": "Bạn không phải thành viên của dự án này",
+      "read_only": "Bạn chỉ có quyền xem",
+      "workspace_admin_required": "Cần quyền quản trị workspace",
+      "project_lead_required": "Cần quyền trưởng nhóm dự án"
+    }
+  },
+  "permissionGuide": {
+    "title": "Hướng Dẫn Phân Quyền",
+    "description": "Tìm hiểu về các vai trò và quyền hạn trong hệ thống quản lý dự án",
+    "infoTitle": "Hệ thống phân quyền 2 cấp",
+    "infoDesc": "Hệ thống có 2 cấp phân quyền: Workspace (tổ chức) và Project (dự án). Mỗi cấp có các vai trò riêng với quyền hạn khác nhau.",
+    "workspaceRoles": "Vai Trò Workspace",
+    "projectRoles": "Vai Trò Dự Án",
+    "workspace": {
+      "fullControl": "Toàn quyền quản lý workspace",
+      "deleteWorkspace": "Xóa workspace",
+      "manageAllMembers": "Quản lý tất cả thành viên",
+      "manageAllProjects": "Quản lý tất cả dự án",
+      "changeSettings": "Thay đổi mọi cài đặt",
+      "inviteMembers": "Mời thành viên mới",
+      "removeMembers": "Xóa thành viên",
+      "manageProjects": "Quản lý dự án",
+      "updateWorkspace": "Cập nhật workspace",
+      "viewWorkspace": "Xem workspace",
+      "joinProjects": "Tham gia dự án",
+      "createProjects": "Tạo dự án mới",
+      "manageWorkspace": "Quản lý workspace"
+    },
+    "project": {
+      "manageProject": "Quản lý dự án",
+      "addRemoveMembers": "Thêm/xóa thành viên",
+      "manageAllTasks": "Quản lý tất cả công việc",
+      "deleteProject": "Xóa dự án",
+      "updateSettings": "Cập nhật cài đặt",
+      "viewProject": "Xem dự án",
+      "createTasks": "Tạo công việc",
+      "updateOwnTasks": "Cập nhật công việc của mình",
+      "manageTasks": "Quản lý công việc",
+      "addMembers": "Thêm thành viên",
+      "viewTasks": "Xem công việc",
+      "editTasks": "Chỉnh sửa công việc",
+      "editProject": "Chỉnh sửa dự án"
+    },
+    "keyPoints": {
+      "title": "Điểm Quan Trọng",
+      "point1": "Workspace Admin có thể xem tất cả dự án nhưng cần là thành viên dự án để chỉnh sửa",
+      "point2": "Team Lead có toàn quyền quản lý dự án của mình, tương đương Workspace Admin trong phạm vi dự án",
+      "point3": "Owner là vai trò cao nhất, chỉ có Owner mới có thể xóa workspace",
+      "point4": "Member có thể tham gia nhiều dự án với vai trò khác nhau trong mỗi dự án"
+    }
   }
 }

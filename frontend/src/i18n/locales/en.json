@@ -344,5 +344,126 @@
       "MENTIONED_IN_TASK": "You were mentioned in a task",
       "SYSTEM_ANNOUNCEMENT": "System announcement"
     }
+  },
+  "role": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "member": "Member",
+    "lead": "Team Lead",
+    "viewer": "Viewer",
+    "ownerTooltip": {
+      "title": "Workspace Owner",
+      "perm1": "Full workspace control",
+      "perm2": "Delete workspace",
+      "perm3": "Manage all members and projects",
+      "perm4": "Change any settings"
+    },
+    "adminTooltip": {
+      "title": "Administrator",
+      "perm1": "Invite and remove members",
+      "perm2": "Manage all projects",
+      "perm3": "Update workspace",
+      "perm4": "Cannot delete workspace"
+    },
+    "memberTooltip": {
+      "title": "Member",
+      "perm1": "View workspace and projects",
+      "perm2": "Join assigned projects",
+      "perm3": "Cannot invite new members"
+    },
+    "leadTooltip": {
+      "title": "Project Team Lead",
+      "perm1": "Manage project",
+      "perm2": "Add/remove project members",
+      "perm3": "Manage all tasks"
+    },
+    "viewerTooltip": {
+      "title": "Viewer",
+      "perm1": "View project only",
+      "perm2": "Cannot edit"
+    }
+  },
+  "permission": {
+    "yourRole": "Your Role",
+    "viewPermissions": "View detailed permissions",
+    "noAccess": "No Access",
+    "noAccessDesc": "You don't have access to this area",
+    "insufficientPermissions": "You don't have permission to view this content",
+    "perms": {
+      "view_workspace": "View workspace",
+      "update_workspace": "Update workspace",
+      "delete_workspace": "Delete workspace",
+      "manage_members": "Manage members",
+      "invite_members": "Invite members",
+      "remove_members": "Remove members",
+      "update_member_roles": "Update roles",
+      "create_projects": "Create projects",
+      "manage_all_projects": "Manage all projects",
+      "manage_all_tasks": "Manage all tasks",
+      "view_project": "View project",
+      "update_project": "Update project",
+      "delete_project": "Delete project",
+      "manage_project_members": "Manage project members",
+      "create_tasks": "Create tasks",
+      "view_tasks": "View tasks",
+      "update_tasks": "Update tasks",
+      "delete_tasks": "Delete tasks"
+    },
+    "requiresRole": "Requires",
+    "reasons": {
+      "no_permission": "You don't have permission to perform this action",
+      "admin_only": "Only administrators can perform this",
+      "owner_only": "Only the owner can perform this",
+      "lead_only": "Only team lead can perform this",
+      "not_member": "You are not a member of this project",
+      "read_only": "You have read-only access",
+      "workspace_admin_required": "Workspace admin permission required",
+      "project_lead_required": "Project team lead permission required"
+    }
+  },
+  "permissionGuide": {
+    "title": "Permission Guide",
+    "description": "Learn about roles and permissions in the project management system",
+    "infoTitle": "2-Level Permission System",
+    "infoDesc": "The system has 2 permission levels: Workspace (organization) and Project. Each level has different roles with specific permissions.",
+    "workspaceRoles": "Workspace Roles",
+    "projectRoles": "Project Roles",
+    "workspace": {
+      "fullControl": "Full workspace control",
+      "deleteWorkspace": "Delete workspace",
+      "manageAllMembers": "Manage all members",
+      "manageAllProjects": "Manage all projects",
+      "changeSettings": "Change any settings",
+      "inviteMembers": "Invite new members",
+      "removeMembers": "Remove members",
+      "manageProjects": "Manage projects",
+      "updateWorkspace": "Update workspace",
+      "viewWorkspace": "View workspace",
+      "joinProjects": "Join projects",
+      "createProjects": "Create new projects",
+      "manageWorkspace": "Manage workspace"
+    },
+    "project": {
+      "manageProject": "Manage project",
+      "addRemoveMembers": "Add/remove members",
+      "manageAllTasks": "Manage all tasks",
+      "deleteProject": "Delete project",
+      "updateSettings": "Update settings",
+      "viewProject": "View project",
+      "createTasks": "Create tasks",
+      "updateOwnTasks": "Update own tasks",
+      "manageTasks": "Manage tasks",
+      "addMembers": "Add members",
+      "viewTasks": "View tasks",
+      "editTasks": "Edit tasks",
+      "editProject": "Edit project"
+    },
+    "keyPoints": {
+      "title": "Key Points",
+      "point1": "Workspace Admin can view all projects but needs to be project member to edit",
+      "point2": "Team Lead has full control over their project, equivalent to Workspace Admin within project scope",
+      "point3": "Owner is the highest role, only Owner can delete workspace",
+      "point4": "Members can join multiple projects with different roles in each project"
+    }
   }
 }
