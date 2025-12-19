@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeftIcon, Edit2Icon, Trash2Icon, CalendarIcon, UserIcon, TagIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { fetchTaskById, updateTask, deleteTask, fetchComments, createComment, deleteComment } from "../features/taskSlice";
+import { getUserById } from "../features/authSlice";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
@@ -29,11 +30,15 @@ export default function TaskDetails() {
     const { t } = useTranslation();
     
     const { currentTask: task, loading, comments } = useSelector(state => state.task);
+
     const { user } = useSelector(state => state.auth);
     
     const [isEditing, setIsEditing] = useState(false);
     const [editedTask, setEditedTask] = useState({});
     const [newComment, setNewComment] = useState("");
+    const [assigneeName, setAssigneeName] = useState(null);
+    
+
 
     useEffect(() => {
         if (taskId) {
@@ -44,6 +49,8 @@ export default function TaskDetails() {
 
     useEffect(() => {
         if (task) {
+            console.log('📋 Task data:', task);
+            console.log('👤 Assignee ID:', task.assigneeId);
             setEditedTask({
                 title: task.title || "",
                 description: task.description || "",
@@ -52,8 +59,27 @@ export default function TaskDetails() {
                 type: task.type || "TASK",
                 due_date: task.due_date ? format(new Date(task.due_date), 'yyyy-MM-dd') : "",
             });
+            
+            // Fetch assignee info if assigneeId exists and is a string (not an object)
+            if (task.assigneeId && typeof task.assigneeId === 'string') {
+                dispatch(getUserById(task.assigneeId))
+                    .unwrap()
+                    .then((name) => {
+                        console.log('✅ Fetched assignee name:', name);
+                        setAssigneeName(name);
+                    })
+                    .catch((error) => {
+                        console.error('❌ Error fetching assignee:', error);
+                        setAssigneeName(null);
+                    });
+            } else if (task.assigneeId && typeof task.assigneeId === 'object') {
+                // If it's already an object, use the name directly
+                setAssigneeName(task.assigneeId.name);
+            } else {
+                setAssigneeName(null);
+            }
         }
-    }, [task]);
+    }, [task, dispatch]);
 
     const handleUpdate = async () => {
         try {
@@ -338,17 +364,32 @@ export default function TaskDetails() {
                         <label className="block text-sm font-semibold mb-2 flex items-center gap-2">
                             <UserIcon className="w-4 h-4" /> {t('taskDetails.assignee')}
                         </label>
-                        <div className="flex items-center gap-2">
-                            <img 
-                                src={task?.assigneeId?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(task?.assigneeId?.name || 'User')}&background=64748B&color=fff&size=40`} 
-                                alt={task?.assigneeId?.name}
-                                className="w-8 h-8 rounded-full"
-                                onError={(e) => {
-                                    e.target.src = `https://ui-avatars.com/api/?name=U&background=64748B&color=fff&size=40`;
-                                }}
-                            />
-                            <span className="text-zinc-700 dark:text-zinc-300">{task?.assigneeId?.name || t('taskDetails.unassigned')}</span>
-                        </div>
+                        {task?.assigneeId ? (
+                            <div className="flex items-center gap-2">
+                                <img 
+                                    src={task.assigneeId?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(assigneeName || task.assigneeId?.name || 'User')}&background=64748B&color=fff&size=40`} 
+                                    alt={assigneeName || task.assigneeId?.name || 'User'}
+                                    className="w-8 h-8 rounded-full"
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent((assigneeName || 'U').charAt(0))}&background=64748B&color=fff&size=40`;
+                                    }}
+                                />
+                                <div>
+                                    <p className="text-zinc-700 dark:text-zinc-300 font-medium">
+                                        {assigneeName || task.assigneeId?.name || 'Loading...'}
+                                    </p>
+                                    {task.assigneeId?.email && (
+                                        <p className="text-xs text-zinc-500 dark:text-zinc-400">{task.assigneeId.email}</p>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
+                                <UserIcon className="w-8 h-8" />
+                                <span>{t('taskDetails.unassigned')}</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Due Date */}

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { authAPI } from '../services/api';
+import { authAPI, userAPI } from '../services/api';
 
 // Get user from localStorage
 const user = JSON.parse(localStorage.getItem('user'));
@@ -86,6 +86,19 @@ export const getMe = createAsyncThunk(
       return user;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to get user');
+    }
+  }
+);
+
+export const getUserById = createAsyncThunk(
+  'auth/getUserById',
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await userAPI.getUserById(userId);
+      const user = response.data.data;
+      return user.name;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to get user name');
     }
   }
 );
