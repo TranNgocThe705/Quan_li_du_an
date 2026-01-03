@@ -13,7 +13,14 @@ export const ProjectRole = {
 export const TaskStatus = {
   TODO: 'TODO',
   IN_PROGRESS: 'IN_PROGRESS',
+  PENDING_APPROVAL: 'PENDING_APPROVAL',
   DONE: 'DONE',
+};
+
+export const ApprovalStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
 };
 
 export const TaskType = {

@@ -1,4 +1,7 @@
 import { Link } from "react-router-dom";
+import { Lock } from "lucide-react";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 const statusColors = {
     PLANNING: "bg-gray-200 dark:bg-zinc-600 text-gray-900 dark:text-zinc-200",
@@ -9,12 +12,39 @@ const statusColors = {
 };
 
 const ProjectCard = ({ project }) => {
+    const { t } = useTranslation();
+    const isAccessible = project.isMember !== false; // Default to true if isMember is undefined for backward compatibility
+
+    const handleClick = (e) => {
+        if (!isAccessible) {
+            e.preventDefault();
+            toast.error(t('projects.noAccess') || 'Bạn không có quyền truy cập dự án này');
+        }
+    };
+
     return (
-        <Link to={`/projectsDetail?id=${project._id}&tab=tasks`} className="bg-white dark:bg-zinc-950 dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 rounded-lg p-5 transition-all duration-200 group">
+        <Link 
+            to={isAccessible ? `/projectsDetail?id=${project._id}&tab=tasks` : '#'} 
+            onClick={handleClick}
+            className={`bg-white dark:bg-zinc-950 dark:bg-gradient-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-lg p-5 transition-all duration-200 group relative ${
+                isAccessible 
+                    ? 'hover:border-gray-300 dark:hover:border-zinc-700 cursor-pointer' 
+                    : 'opacity-60 cursor-not-allowed'
+            }`}
+        >
+            {/* Lock overlay for non-accessible projects */}
+            {!isAccessible && (
+                <div className="absolute top-3 right-3 bg-red-500 text-white rounded-full p-1.5">
+                    <Lock className="w-3.5 h-3.5" />
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 dark:text-zinc-200 mb-1 truncate group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
+                    <h3 className={`font-semibold text-gray-900 dark:text-zinc-200 mb-1 truncate transition-colors ${
+                        isAccessible ? 'group-hover:text-blue-500 dark:group-hover:text-blue-400' : ''
+                    }`}>
                         {project.name}
                     </h3>
                     <p className="text-gray-500 dark:text-zinc-400 text-sm line-clamp-2 mb-3">
@@ -43,7 +73,15 @@ const ProjectCard = ({ project }) => {
                 </div>
             </div>
 
-            </Link>
+            {!isAccessible && (
+                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-zinc-700">
+                    <p className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                        <Lock className="w-3 h-3" />
+                        {t('projects.noAccessHint') || 'Bạn không phải thành viên của dự án này'}
+                    </p>
+                </div>
+            )}
+        </Link>
     );
 };
 

@@ -1,16 +1,34 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeftIcon, Edit2Icon, Trash2Icon, CalendarIcon, UserIcon, TagIcon } from "lucide-react";
+import { ArrowLeftIcon, Edit2Icon, Trash2Icon, CalendarIcon, UserIcon, TagIcon, Paperclip, ThumbsUpIcon, ThumbsDownIcon, CheckCircleIcon, XCircleIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { fetchTaskById, updateTask, deleteTask, fetchComments, createComment, deleteComment } from "../../features/taskSlice";
 import { getUserById } from "../../features/authSlice";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
+import ChatComments from "../../components/tasks/ChatComments";
+import FileUpload from "../../components/tasks/FileUpload";
+import AttachmentList from "../../components/tasks/AttachmentList";
+import ApprovalHistory from "../../components/tasks/ApprovalHistory";
+import { taskAPI } from "../../api";
+import { 
+  joinTaskRoom, 
+  leaveTaskRoom, 
+  onNewComment, 
+  onDeleteComment,
+  onTyping,
+  onNewAttachment,
+  onDeleteAttachment,
+  emitTypingStart,
+  emitTypingStop,
+  removeAllListeners,
+} from "../../services/socket";
 
 const statusColors = {
     TODO: "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-200",
     IN_PROGRESS: "bg-blue-200 text-blue-900 dark:bg-blue-600 dark:text-blue-100",
+    PENDING_APPROVAL: "bg-yellow-200 text-yellow-900 dark:bg-yellow-600 dark:text-yellow-100",
     DONE: "bg-emerald-200 text-emerald-900 dark:bg-emerald-600 dark:text-emerald-100",
 };
 
@@ -35,10 +53,24 @@ export default function TaskDetails() {
     
     const [isEditing, setIsEditing] = useState(false);
     const [editedTask, setEditedTask] = useState({});
-    const [newComment, setNewComment] = useState("");
     const [assigneeName, setAssigneeName] = useState(null);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectionReason, setRejectionReason] = useState("");
+    
+    // Real-time features
+    const [typingUsers, setTypingUsers] = useState([]);
+    const [showAttachments, setShowAttachments] = useState(true);
+    const [attachmentKey, setAttachmentKey] = useState(0);
     
 
+
+    // Initialize Socket.IO
+    useEffect(() => {
+        // Socket already initialized in Layout, no need to init again
+        return () => {
+            removeAllListeners();
+        };
+    }, []);
 
     useEffect(() => {
         if (taskId) {
@@ -46,6 +78,52 @@ export default function TaskDetails() {
             dispatch(fetchComments(taskId));
         }
     }, [dispatch, taskId]);
+
+    // Join task room and setup real-time listeners
+    useEffect(() => {
+        if (!taskId) return;
+
+        joinTaskRoom(taskId);
+
+        onNewComment((comment) => {
+            console.log('📨 New comment received:', comment);
+            dispatch(fetchComments(taskId));
+        });
+
+        onDeleteComment(({ commentId }) => {
+            console.log('🗑️ Comment deleted:', commentId);
+            dispatch(fetchComments(taskId));
+        });
+
+        onTyping(({ user: typingUser, isTyping }) => {
+            if (isTyping) {
+                setTypingUsers(prev => {
+                    const exists = prev.find(u => u._id === typingUser._id);
+                    if (!exists) {
+                        return [...prev, typingUser];
+                    }
+                    return prev;
+                });
+            } else {
+                setTypingUsers(prev => prev.filter(u => u._id !== typingUser._id));
+            }
+        });
+
+        onNewAttachment((attachment) => {
+            console.log('📎 New attachment received:', attachment);
+            setAttachmentKey(prev => prev + 1);
+        });
+
+        onDeleteAttachment(({ attachmentId }) => {
+            console.log('🗑️ Attachment deleted:', attachmentId);
+            setAttachmentKey(prev => prev + 1);
+        });
+
+        return () => {
+            leaveTaskRoom(taskId);
+            setTypingUsers([]);
+        };
+    }, [taskId, dispatch]);
 
     useEffect(() => {
         if (task) {
@@ -83,6 +161,18 @@ export default function TaskDetails() {
 
     const handleUpdate = async () => {
         try {
+            // Prevent direct change to PENDING_APPROVAL via dropdown
+            if (editedTask.status === 'PENDING_APPROVAL' && task.status !== 'PENDING_APPROVAL') {
+                toast.error('Không thể chuyển trực tiếp sang "Chờ duyệt". Vui lòng sử dụng nút "Đánh dấu hoàn thành"');
+                return;
+            }
+            
+            // Prevent changing away from PENDING_APPROVAL except by approve/reject
+            if (task.status === 'PENDING_APPROVAL' && editedTask.status !== 'PENDING_APPROVAL') {
+                toast.error('Công việc đang chờ duyệt. Vui lòng phê duyệt hoặc từ chối thay vì thay đổi trạng thái');
+                return;
+            }
+
             await dispatch(updateTask({
                 id: taskId,
                 data: editedTask
@@ -106,18 +196,18 @@ export default function TaskDetails() {
         }
     };
 
-    const handleAddComment = async (e) => {
-        e.preventDefault();
-        if (!newComment.trim()) return;
+    const handleAddComment = async (content) => {
+        if (!content.trim()) return;
 
         try {
             await dispatch(createComment({
                 taskId,
-                content: newComment
+                content
             })).unwrap();
-            setNewComment("");
+            emitTypingStop(taskId);
         } catch (error) {
             toast.error(error || t('taskDetails.commentError'));
+            throw error;
         }
     };
 
@@ -128,6 +218,61 @@ export default function TaskDetails() {
             await dispatch(deleteComment(commentId)).unwrap();
         } catch (error) {
             toast.error(error || 'Không thể xóa comment');
+        }
+    };
+
+    const handleTypingStart = () => {
+        emitTypingStart(taskId);
+    };
+
+    const handleTypingStop = () => {
+        emitTypingStop(taskId);
+    };
+
+    const handleUploadSuccess = () => {
+        toast.success('File uploaded successfully!');
+        setAttachmentKey(prev => prev + 1);
+    };
+
+    // Approval handlers
+    const handleSubmitForApproval = async () => {
+        if (!window.confirm('Bạn xác nhận đã hoàn thành công việc này và muốn gửi yêu cầu phê duyệt?')) {
+            return;
+        }
+
+        try {
+            await taskAPI.submitForApproval(taskId);
+            toast.success('Đã gửi yêu cầu phê duyệt thành công');
+            dispatch(fetchTaskById(taskId));
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Không thể gửi yêu cầu phê duyệt');
+        }
+    };
+
+    const handleApprove = async () => {
+        try {
+            await taskAPI.approveTask(taskId);
+            toast.success('Công việc đã được duyệt');
+            dispatch(fetchTaskById(taskId));
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Không thể duyệt công việc');
+        }
+    };
+
+    const handleReject = async () => {
+        if (!rejectionReason.trim()) {
+            toast.error('Vui lòng nhập lý do từ chối');
+            return;
+        }
+
+        try {
+            await taskAPI.rejectTask(taskId, rejectionReason);
+            toast.success('Công việc đã bị từ chối');
+            setShowRejectModal(false);
+            setRejectionReason('');
+            dispatch(fetchTaskById(taskId));
+        } catch (error) {
+            toast.error(error?.response?.data?.message || 'Không thể từ chối công việc');
         }
     };
 
@@ -172,37 +317,58 @@ export default function TaskDetails() {
                             type="text"
                             value={editedTask.title}
                             onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
-                            className="text-2xl font-semibold bg-transparent border-b-2 border-blue-500 outline-none px-2 py-1"
+                            className="text-2xl font-semibold bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded p-2 outline-none w-full"
                         />
                     )}
                 </div>
                 <div className="flex items-center gap-2">
+                    {/* Submit for Approval Button - Only for assignee when task is IN_PROGRESS */}
+                    {task?.assigneeId?._id === user?._id && task?.status === 'IN_PROGRESS' && (
+                        <button
+                            onClick={handleSubmitForApproval}
+                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center gap-2 transition-colors"
+                        >
+                            <CheckCircleIcon className="w-5 h-5" />
+                            Đánh dấu hoàn thành
+                        </button>
+                    )}
+
                     {!isEditing ? (
                         <>
-                            <button 
-                                onClick={() => setIsEditing(true)} 
-                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2"
+                            <button
+                                onClick={() => {
+                                    setIsEditing(true);
+                                    setEditedTask({
+                                        title: task?.title || '',
+                                        description: task?.description || '',
+                                        status: task?.status || 'TODO',
+                                        priority: task?.priority || 'MEDIUM',
+                                        type: task?.type || 'TASK',
+                                        due_date: task?.due_date ? format(new Date(task.due_date), 'yyyy-MM-dd') : '',
+                                    });
+                                }}
+                                className="p-2 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700"
                             >
-                                <Edit2Icon className="w-4 h-4" /> {t('taskDetails.edit')}
+                                <Edit2Icon className="w-5 h-5" />
                             </button>
-                            <button 
-                                onClick={handleDelete} 
-                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-2"
+                            <button
+                                onClick={handleDelete}
+                                className="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900 text-red-600"
                             >
-                                <Trash2Icon className="w-4 h-4" /> {t('taskDetails.delete')}
+                                <Trash2Icon className="w-5 h-5" />
                             </button>
                         </>
                     ) : (
                         <>
-                            <button 
-                                onClick={handleUpdate} 
-                                className="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600"
+                            <button
+                                onClick={handleUpdate}
+                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                             >
                                 {t('taskDetails.save')}
                             </button>
-                            <button 
-                                onClick={() => setIsEditing(false)} 
-                                className="px-4 py-2 bg-zinc-500 text-white rounded hover:bg-zinc-600"
+                            <button
+                                onClick={() => setIsEditing(false)}
+                                className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-200 rounded hover:bg-zinc-300 dark:hover:bg-zinc-600"
                             >
                                 {t('taskDetails.cancel')}
                             </button>
@@ -214,7 +380,77 @@ export default function TaskDetails() {
             {/* Main Content */}
             <div className="grid md:grid-cols-3 gap-6">
                 {/* Left Column - Details */}
-                <div className="md:col-span-2 space-y-6">
+                <div className="md:col-span-2 space-y-6">                    {/* Approval Status */}
+                    {task?.status === 'PENDING_APPROVAL' && (
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg p-4 flex items-start gap-3">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <CheckCircleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                                    <span className="font-semibold text-yellow-900 dark:text-yellow-200">
+                                        Công việc đang chờ duyệt
+                                    </span>
+                                </div>
+                                <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                                    Công việc này cần được Team Lead phê duyệt trước khi hoàn thành
+                                </p>
+                            </div>
+                            {/* Show approve/reject buttons only for Team Lead */}
+                            {user?.projectRole === 'LEAD' && (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleApprove}
+                                        className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center gap-2 text-sm"
+                                    >
+                                        <ThumbsUpIcon className="w-4 h-4" /> Duyệt
+                                    </button>
+                                    <button
+                                        onClick={() => setShowRejectModal(true)}
+                                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-2 text-sm"
+                                    >
+                                        <ThumbsDownIcon className="w-4 h-4" /> Từ chối
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Approved Info */}
+                    {task?.approvalStatus === 'APPROVED' && task?.approvedBy && (
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-700 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                <span className="font-semibold text-green-900 dark:text-green-200">
+                                    Đã được duyệt
+                                </span>
+                            </div>
+                            <p className="text-sm text-green-800 dark:text-green-300">
+                                Bởi {task.approvedBy.name || 'Team Lead'} vào{' '}
+                                {task.approvedAt && format(new Date(task.approvedAt), 'dd/MM/yyyy HH:mm')}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Rejected Info */}
+                    {task?.approvalStatus === 'REJECTED' && (
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <XCircleIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
+                                <span className="font-semibold text-red-900 dark:text-red-200">
+                                    Công việc bị từ chối
+                                </span>
+                            </div>
+                            <p className="text-sm text-red-800 dark:text-red-300 mb-2">
+                                Bởi {task.approvedBy?.name || 'Team Lead'} vào{' '}
+                                {task.approvedAt && format(new Date(task.approvedAt), 'dd/MM/yyyy HH:mm')}
+                            </p>
+                            {task.rejectionReason && (
+                                <div className="mt-2 p-3 bg-red-100 dark:bg-red-900/40 rounded">
+                                    <p className="font-semibold text-sm text-red-900 dark:text-red-200">Lý do:</p>
+                                    <p className="text-sm text-red-800 dark:text-red-300">{task.rejectionReason}</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
                     {/* Description */}
                     <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
                         <h2 className="text-lg font-semibold mb-4">{t('taskDetails.description')}</h2>
@@ -233,62 +469,63 @@ export default function TaskDetails() {
                         )}
                     </div>
 
-                    {/* Comments */}
+                    {/* Attachments */}
                     <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-                        <h2 className="text-lg font-semibold mb-4">{t('taskDetails.comments')} ({comments?.length || 0})</h2>
-                        
-                        {/* Add Comment Form */}
-                        <form onSubmit={handleAddComment} className="mb-6">
-                            <textarea
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                rows={3}
-                                className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded p-3 outline-none focus:ring-2 focus:ring-blue-500 mb-2"
-                                placeholder={t('taskDetails.writeComment')}
-                            />
-                            <button 
-                                type="submit"
-                                disabled={!newComment.trim()}
-                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-semibold flex items-center gap-2">
+                                <Paperclip className="w-5 h-5" />
+                                File đính kèm
+                            </h2>
+                            <button
+                                onClick={() => setShowAttachments(!showAttachments)}
+                                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
                             >
-                                {t('taskDetails.postComment')}
+                                {showAttachments ? 'Ẩn' : 'Hiện'}
                             </button>
-                        </form>
+                        </div>
 
-                        {/* Comments List */}
-                        <div className="space-y-4">
-                            {comments && comments.length > 0 ? (
-                                comments.map((comment) => (
-                                    <div key={comment._id} className="border-l-4 border-blue-500 bg-zinc-50 dark:bg-zinc-800 p-4 rounded">
-                                        <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-3">
-                                                    <img
-                                                    src={comment.userId?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.userId?.name || 'User')}&background=random&size=40`} 
-                                                    alt={comment.userId?.name}
-                                                    className="w-10 h-10 rounded-full"
-                                                    />
-                                                <div>
-                                                    <p className="font-semibold text-sm">{comment.userId?.name}</p>
-                                                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                                        {format(new Date(comment.createdAt), 'dd/MM/yyyy HH:mm')}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            {comment.userId?._id === user?._id && (
-                                                <button
-                                                    onClick={() => handleDeleteComment(comment._id)}
-                                                    className="text-red-500 hover:text-red-700"
-                                                >
-                                                    <Trash2Icon className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                        </div>
-                                        <p className="text-zinc-700 dark:text-zinc-300">{comment.content}</p>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-zinc-500 dark:text-zinc-400 text-center py-4">{t('taskDetails.noComments')}</p>
-                            )}
+                        {showAttachments && (
+                            <div className="space-y-4">
+                                <FileUpload 
+                                    taskId={taskId} 
+                                    onUploadSuccess={handleUploadSuccess}
+                                />
+
+                                <div className="mt-6">
+                                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                        Danh sách file
+                                    </h3>
+                                    <AttachmentList 
+                                        key={attachmentKey}
+                                        taskId={taskId}
+                                        onDelete={() => toast.success('File deleted successfully')}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Approval History */}
+                    {task?.approvalRequests && task.approvalRequests.length > 0 && (
+                        <ApprovalHistory task={task} />
+                    )}
+
+                    {/* Comments */}
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
+                        <div className="p-6 border-b border-zinc-200 dark:border-zinc-700">
+                            <h2 className="text-lg font-semibold">{t('taskDetails.comments')} ({comments?.length || 0})</h2>
+                        </div>
+
+                        <div className="h-[500px]">
+                            <ChatComments
+                                comments={comments || []}
+                                currentUserId={user?._id}
+                                onAddComment={handleAddComment}
+                                onDeleteComment={handleDeleteComment}
+                                typingUsers={typingUsers}
+                                onTypingStart={handleTypingStart}
+                                onTypingStop={handleTypingStop}
+                            />
                         </div>
                     </div>
                 </div>
@@ -300,7 +537,10 @@ export default function TaskDetails() {
                         <label className="block text-sm font-semibold mb-2">{t('taskDetails.status')}</label>
                         {!isEditing ? (
                             <span className={`px-3 py-1 rounded text-sm ${statusColors[task?.status || 'TODO']}`}>
-                                {task?.status === 'TODO' ? t('taskDetails.todo') : task?.status === 'IN_PROGRESS' ? t('taskDetails.inProgress') : t('taskDetails.done')}
+                                {task?.status === 'TODO' ? t('taskDetails.todo') : 
+                                 task?.status === 'IN_PROGRESS' ? t('taskDetails.inProgress') : 
+                                 task?.status === 'PENDING_APPROVAL' ? 'Chờ duyệt' :
+                                 t('taskDetails.done')}
                             </span>
                         ) : (
                             <select
@@ -310,6 +550,10 @@ export default function TaskDetails() {
                             >
                                 <option value="TODO">{t('taskDetails.todo')}</option>
                                 <option value="IN_PROGRESS">{t('taskDetails.inProgress')}</option>
+                                {/* PENDING_APPROVAL can only be set via "Submit for Approval" button */}
+                                {task?.status === 'PENDING_APPROVAL' && (
+                                    <option value="PENDING_APPROVAL">Chờ duyệt</option>
+                                )}
                                 <option value="DONE">{t('taskDetails.done')}</option>
                             </select>
                         )}
@@ -412,6 +656,50 @@ export default function TaskDetails() {
                     </div>
                 </div>
             </div>
+
+            {/* Reject Modal */}
+            {showRejectModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-zinc-900 rounded-lg p-6 w-full max-w-md border border-zinc-200 dark:border-zinc-800">
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <XCircleIcon className="w-5 h-5 text-red-500" />
+                            Từ chối công việc
+                        </h3>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">
+                                Lý do từ chối <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                placeholder="Nhập lý do từ chối công việc..."
+                                className="w-full h-32 p-3 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 outline-none focus:border-blue-500 resize-none"
+                            />
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                                Lý do từ chối sẽ được gửi cho người được giao việc
+                            </p>
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => {
+                                    setShowRejectModal(false);
+                                    setRejectionReason('');
+                                }}
+                                className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-200 rounded hover:bg-zinc-300 dark:hover:bg-zinc-600"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={handleReject}
+                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-2"
+                            >
+                                <ThumbsDownIcon className="w-4 h-4" />
+                                Xác nhận từ chối
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

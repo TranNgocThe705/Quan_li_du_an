@@ -132,6 +132,13 @@ const seedData = async () => {
         ownerId: users[1]._id, // manager@gmail.com
         image_url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&h=300&fit=crop',
       },
+      {
+        name: 'Team Lead Development Hub',
+        slug: 'lead-dev-hub-' + Date.now(),
+        description: 'Workspace cho testing approval workflow và task management',
+        ownerId: users[2]._id, // lead@gmail.com - Owner/Creator
+        image_url: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=400&h=300&fit=crop',
+      },
     ]);
 
     console.log('✅ Workspaces created');
@@ -154,6 +161,12 @@ const seedData = async () => {
       { userId: users[1]._id, workspaceId: workspaces[1]._id, role: 'ADMIN' },   // manager@gmail.com - Owner
       { userId: users[4]._id, workspaceId: workspaces[1]._id, role: 'MEMBER' },  // dev@gmail.com
       { userId: users[9]._id, workspaceId: workspaces[1]._id, role: 'MEMBER' },  // product@gmail.com
+      
+      // Test Workspace members - lead@gmail.com's workspace
+      { userId: users[2]._id, workspaceId: workspaces[2]._id, role: 'ADMIN' },   // lead@gmail.com - Owner
+      { userId: users[4]._id, workspaceId: workspaces[2]._id, role: 'MEMBER' },  // dev@gmail.com
+      { userId: users[5]._id, workspaceId: workspaces[2]._id, role: 'MEMBER' },  // designer@gmail.com
+      { userId: users[6]._id, workspaceId: workspaces[2]._id, role: 'MEMBER' },  // tester@gmail.com
     ]);
 
     console.log('✅ Workspace members added');
@@ -241,6 +254,30 @@ const seedData = async () => {
         workspaceId: workspaces[1]._id,
         progress: 28,
       },
+      
+      // Workspace 3 - Team Lead Development Hub (Test Workspace)
+      {
+        name: 'Task Approval System Testing',
+        description: 'Project để test chức năng phê duyệt task và workflow quản lý công việc',
+        priority: 'HIGH',
+        status: 'ACTIVE',
+        start_date: new Date('2025-12-01'),
+        end_date: new Date('2026-03-31'),
+        team_lead: users[2]._id, // lead@gmail.com
+        workspaceId: workspaces[2]._id,
+        progress: 0,
+      },
+      {
+        name: 'Feature Development Sprint',
+        description: 'Sprint phát triển các tính năng mới cho hệ thống',
+        priority: 'MEDIUM',
+        status: 'ACTIVE',
+        start_date: new Date('2025-12-01'),
+        end_date: new Date('2026-02-28'),
+        team_lead: users[2]._id, // lead@gmail.com
+        workspaceId: workspaces[2]._id,
+        progress: 0,
+      },
     ]);
 
     console.log('✅ Projects created');
@@ -278,6 +315,22 @@ const seedData = async () => {
       { userId: users[1]._id, projectId: projects[4]._id, role: 'LEAD' },     // manager@gmail.com - Project Manager
       { userId: users[4]._id, projectId: projects[4]._id, role: 'MEMBER' },   // dev@gmail.com - Developer
       { userId: users[5]._id, projectId: projects[4]._id, role: 'MEMBER' },   // designer@gmail.com - Designer
+      
+      // AI Chatbot Platform - Startup Tech
+      { userId: users[9]._id, projectId: projects[6]._id, role: 'LEAD' },     // product@gmail.com - Product Owner
+      { userId: users[4]._id, projectId: projects[6]._id, role: 'MEMBER' },   // dev@gmail.com - Developer
+      { userId: users[1]._id, projectId: projects[6]._id, role: 'MEMBER' },   // manager@gmail.com - Manager
+      
+      // Task Approval System Testing - Test Workspace
+      { userId: users[2]._id, projectId: projects[7]._id, role: 'LEAD' },     // lead@gmail.com - Team Lead (Creator)
+      { userId: users[4]._id, projectId: projects[7]._id, role: 'MEMBER' },   // dev@gmail.com - Developer
+      { userId: users[5]._id, projectId: projects[7]._id, role: 'MEMBER' },   // designer@gmail.com - Designer
+      { userId: users[6]._id, projectId: projects[7]._id, role: 'MEMBER' },   // tester@gmail.com - QA Tester
+      
+      // Feature Development Sprint - Test Workspace
+      { userId: users[2]._id, projectId: projects[8]._id, role: 'LEAD' },     // lead@gmail.com - Team Lead
+      { userId: users[4]._id, projectId: projects[8]._id, role: 'MEMBER' },   // dev@gmail.com - Developer
+      { userId: users[6]._id, projectId: projects[8]._id, role: 'MEMBER' },   // tester@gmail.com - QA Tester
     ]);
 
     console.log('✅ Project members added');
@@ -554,6 +607,107 @@ const seedData = async () => {
         assigneeId: users[5]._id, // designer@gmail.com
         due_date: new Date('2025-10-25'),
       },
+      
+      // Task Approval System Testing - Tasks (Test Workspace)
+      {
+        projectId: projects[7]._id,
+        title: 'Thiết kế UI cho approval workflow',
+        description: 'Thiết kế giao diện hiển thị lịch sử approval, buttons approve/reject',
+        status: 'DONE',
+        type: 'TASK',
+        priority: 'HIGH',
+        assigneeId: users[5]._id, // designer@gmail.com
+        due_date: new Date('2025-12-05'),
+        checklistItems: [
+          { text: 'Wireframe cho approval history', completed: true },
+          { text: 'Design buttons approve/reject', completed: true },
+          { text: 'Review với team', completed: true },
+        ],
+      },
+      {
+        projectId: projects[7]._id,
+        title: 'Implement backend approval API',
+        description: 'API endpoints: submitForApproval, approveTask, rejectTask, getPendingApprovals',
+        status: 'DONE',
+        type: 'FEATURE',
+        priority: 'HIGH',
+        assigneeId: users[4]._id, // dev@gmail.com
+        due_date: new Date('2025-12-08'),
+        checklistItems: [
+          { text: 'Create submitForApproval endpoint', completed: true },
+          { text: 'Create approveTask endpoint', completed: true },
+          { text: 'Create rejectTask endpoint', completed: true },
+          { text: 'Test all endpoints', completed: true },
+        ],
+      },
+      {
+        projectId: projects[7]._id,
+        title: 'Test approval workflow end-to-end',
+        description: 'Kiểm thử toàn bộ quy trình: submit → pending → approve/reject → notification',
+        status: 'IN_PROGRESS',
+        type: 'TASK',
+        priority: 'HIGH',
+        assigneeId: users[6]._id, // tester@gmail.com
+        due_date: new Date('2025-12-15'),
+        checklistItems: [
+          { text: 'Test submit for approval', completed: true },
+          { text: 'Test approve functionality', completed: false },
+          { text: 'Test reject with reason', completed: false },
+          { text: 'Test notification system', completed: false },
+        ],
+      },
+      {
+        projectId: projects[7]._id,
+        title: 'Thêm approval policy settings',
+        description: 'Cho phép config approval rules: auto-approve, require N approvals, v.v.',
+        status: 'TODO',
+        type: 'FEATURE',
+        priority: 'MEDIUM',
+        assigneeId: users[4]._id, // dev@gmail.com
+        due_date: new Date('2025-12-20'),
+      },
+      {
+        projectId: projects[7]._id,
+        title: 'Fix bug approval history không hiển thị',
+        description: 'ApprovalHistory component không render khi task có nhiều approval requests',
+        status: 'TODO',
+        type: 'BUG',
+        priority: 'HIGH',
+        assigneeId: users[4]._id, // dev@gmail.com
+        due_date: new Date('2025-12-12'),
+      },
+      
+      // Feature Development Sprint - Tasks (Test Workspace)
+      {
+        projectId: projects[8]._id,
+        title: 'Implement task templates',
+        description: 'Cho phép user tạo template cho các task lặp lại',
+        status: 'TODO',
+        type: 'FEATURE',
+        priority: 'MEDIUM',
+        assigneeId: users[4]._id, // dev@gmail.com
+        due_date: new Date('2025-12-18'),
+      },
+      {
+        projectId: projects[8]._id,
+        title: 'Add time tracking feature',
+        description: 'Thêm chức năng track thời gian làm việc cho mỗi task',
+        status: 'TODO',
+        type: 'FEATURE',
+        priority: 'HIGH',
+        assigneeId: users[4]._id, // dev@gmail.com
+        due_date: new Date('2025-12-25'),
+      },
+      {
+        projectId: projects[8]._id,
+        title: 'Test performance với 1000+ tasks',
+        description: 'Load test và optimize performance khi có nhiều tasks',
+        status: 'TODO',
+        type: 'TASK',
+        priority: 'MEDIUM',
+        assigneeId: users[6]._id, // tester@gmail.com
+        due_date: new Date('2026-01-05'),
+      },
     ]);
 
     console.log('✅ Tasks created');
@@ -649,6 +803,38 @@ const seedData = async () => {
         content: 'Real-time updates hoạt động rất mượt. Performance tốt!',
         userId: users[4]._id,
         taskId: tasks[24]._id,
+      },
+      
+      // Comments cho Test Workspace - Task Approval System Testing
+      {
+        content: 'UI design cho approval workflow đã hoàn thành. Đang chờ review từ team lead.',
+        userId: users[5]._id, // designer@gmail.com
+        taskId: tasks[28]._id,
+      },
+      {
+        content: 'Design looks great! Approved, bắt đầu implement nhé!',
+        userId: users[2]._id, // lead@gmail.com
+        taskId: tasks[28]._id,
+      },
+      {
+        content: 'Backend API đã hoàn thành và đã test trên Postman. Tất cả endpoints đều working!',
+        userId: users[4]._id, // dev@gmail.com
+        taskId: tasks[29]._id,
+      },
+      {
+        content: 'Excellent work! Frontend team có thể bắt đầu integrate rồi.',
+        userId: users[2]._id, // lead@gmail.com
+        taskId: tasks[29]._id,
+      },
+      {
+        content: 'Đang test workflow. Submit và notification hoạt động OK. Approve/reject còn một vài bugs.',
+        userId: users[6]._id, // tester@gmail.com
+        taskId: tasks[30]._id,
+      },
+      {
+        content: 'Hãy tạo bug report chi tiết để dev team fix nhé!',
+        userId: users[2]._id, // lead@gmail.com
+        taskId: tasks[30]._id,
       },
     ]);
 
@@ -814,6 +1000,79 @@ const seedData = async () => {
         workspaceId: workspaces[0]._id,
         isRead: true,
       },
+      
+      // Notifications cho Test Workspace
+      {
+        userId: users[4]._id, // dev@gmail.com
+        fromUserId: users[2]._id, // lead@gmail.com
+        type: 'TASK_ASSIGNED',
+        title: 'Task mới được phân công',
+        message: 'Lê Văn Lead đã phân công task "Implement backend approval API" cho bạn',
+        entityType: 'TASK',
+        entityId: tasks[29]._id,
+        workspaceId: workspaces[2]._id,
+        projectId: projects[7]._id,
+        isRead: false,
+      },
+      {
+        userId: users[5]._id, // designer@gmail.com
+        fromUserId: users[2]._id,
+        type: 'TASK_ASSIGNED',
+        title: 'Task mới được phân công',
+        message: 'Lê Văn Lead đã phân công task "Thiết kế UI cho approval workflow" cho bạn',
+        entityType: 'TASK',
+        entityId: tasks[28]._id,
+        workspaceId: workspaces[2]._id,
+        projectId: projects[7]._id,
+        isRead: true,
+      },
+      {
+        userId: users[6]._id, // tester@gmail.com
+        fromUserId: users[2]._id,
+        type: 'TASK_ASSIGNED',
+        title: 'Task mới được phân công',
+        message: 'Lê Văn Lead đã phân công task "Test approval workflow end-to-end" cho bạn',
+        entityType: 'TASK',
+        entityId: tasks[30]._id,
+        workspaceId: workspaces[2]._id,
+        projectId: projects[7]._id,
+        isRead: false,
+      },
+      {
+        userId: users[4]._id, // dev@gmail.com
+        fromUserId: users[6]._id, // tester@gmail.com
+        type: 'TASK_COMMENT',
+        title: 'Comment mới trên task',
+        message: 'Đỗ Thị Tester đã comment trên task "Test approval workflow end-to-end"',
+        entityType: 'TASK',
+        entityId: tasks[30]._id,
+        workspaceId: workspaces[2]._id,
+        projectId: projects[7]._id,
+        isRead: false,
+      },
+      {
+        userId: users[5]._id, // designer@gmail.com
+        fromUserId: users[2]._id, // lead@gmail.com
+        type: 'PROJECT_MEMBER_ADDED',
+        title: 'Được thêm vào dự án',
+        message: 'Bạn đã được thêm vào dự án "Task Approval System Testing"',
+        entityType: 'PROJECT',
+        entityId: projects[7]._id,
+        workspaceId: workspaces[2]._id,
+        projectId: projects[7]._id,
+        isRead: true,
+      },
+      {
+        userId: users[4]._id, // dev@gmail.com
+        fromUserId: users[2]._id, // lead@gmail.com
+        type: 'WORKSPACE_MEMBER_ADDED',
+        title: 'Được thêm vào workspace',
+        message: 'Bạn đã được thêm vào workspace "Team Lead Development Hub"',
+        entityType: 'WORKSPACE',
+        entityId: workspaces[2]._id,
+        workspaceId: workspaces[2]._id,
+        isRead: true,
+      },
     ]);
 
     console.log('✅ Notifications created');
@@ -950,6 +1209,73 @@ const seedData = async () => {
         workspaceId: workspaces[0]._id,
         projectId: projects[1]._id,
       },
+      
+      // Test Workspace Activities
+      {
+        userId: users[2]._id, // lead@gmail.com
+        action: 'WORKSPACE_CREATED',
+        entityType: 'WORKSPACE',
+        entityId: workspaces[2]._id,
+        description: 'Tạo workspace "Team Lead Development Hub"',
+        workspaceId: workspaces[2]._id,
+      },
+      {
+        userId: users[2]._id,
+        action: 'WORKSPACE_MEMBER_ADDED',
+        entityType: 'WORKSPACE',
+        entityId: workspaces[2]._id,
+        description: 'Thêm Hoàng Văn Dev vào workspace',
+        workspaceId: workspaces[2]._id,
+        metadata: { memberName: 'Hoàng Văn Dev', memberEmail: 'dev@gmail.com' },
+      },
+      {
+        userId: users[2]._id,
+        action: 'PROJECT_CREATED',
+        entityType: 'PROJECT',
+        entityId: projects[7]._id,
+        description: 'Tạo dự án "Task Approval System Testing"',
+        workspaceId: workspaces[2]._id,
+        projectId: projects[7]._id,
+      },
+      {
+        userId: users[2]._id,
+        action: 'TASK_CREATED',
+        entityType: 'TASK',
+        entityId: tasks[28]._id,
+        description: 'Tạo task "Thiết kế UI cho approval workflow"',
+        workspaceId: workspaces[2]._id,
+        projectId: projects[7]._id,
+      },
+      {
+        userId: users[5]._id, // designer@gmail.com
+        action: 'TASK_STATUS_CHANGED',
+        entityType: 'TASK',
+        entityId: tasks[28]._id,
+        description: 'Thay đổi trạng thái task từ IN_PROGRESS sang DONE',
+        workspaceId: workspaces[2]._id,
+        projectId: projects[7]._id,
+        metadata: { oldStatus: 'IN_PROGRESS', newStatus: 'DONE' },
+      },
+      {
+        userId: users[2]._id,
+        action: 'TASK_ASSIGNED',
+        entityType: 'TASK',
+        entityId: tasks[29]._id,
+        description: 'Phân công task "Implement backend approval API" cho Hoàng Văn Dev',
+        workspaceId: workspaces[2]._id,
+        projectId: projects[7]._id,
+        metadata: { assigneeName: 'Hoàng Văn Dev' },
+      },
+      {
+        userId: users[4]._id, // dev@gmail.com
+        action: 'TASK_STATUS_CHANGED',
+        entityType: 'TASK',
+        entityId: tasks[29]._id,
+        description: 'Thay đổi trạng thái task từ IN_PROGRESS sang DONE',
+        workspaceId: workspaces[2]._id,
+        projectId: projects[7]._id,
+        metadata: { oldStatus: 'IN_PROGRESS', newStatus: 'DONE' },
+      },
     ]);
 
     console.log('✅ Activity logs created');
@@ -958,21 +1284,25 @@ const seedData = async () => {
     console.log('📊 THỐNG KÊ DỮ LIỆU:');
     console.log('='.repeat(65));
     console.log('👥 Users: 10 tài khoản với roles khác nhau');
-    console.log('🏢 Workspaces: 2 workspaces');
+    console.log('🏢 Workspaces: 3 workspaces');
     console.log('   ├─ Công Ty TNHH Phần Mềm ABC (9 members)');
-    console.log('   └─ Startup Tech Solutions (3 members)');
-    console.log('📁 Projects: 7 dự án đa dạng');
+    console.log('   ├─ Startup Tech Solutions (3 members)');
+    console.log('   └─ Team Lead Development Hub (4 members) ⭐ TEST WORKSPACE');
+    console.log('📁 Projects: 9 dự án đa dạng');
     console.log('   ├─ Hệ Thống Quản Lý Bán Hàng (HIGH - ACTIVE - 45%)');
     console.log('   ├─ App Di Động Đặt Đồ Ăn (HIGH - ACTIVE - 38%)');
     console.log('   ├─ Website E-commerce (HIGH - ACTIVE - 62%)');
     console.log('   ├─ Hệ Thống CRM (MEDIUM - ACTIVE - 15%)');
     console.log('   ├─ Mobile Banking App (HIGH - PLANNING - 8%)');
     console.log('   ├─ Dashboard Analytics (MEDIUM - COMPLETED - 100%)');
-    console.log('   └─ AI Chatbot Platform (HIGH - ACTIVE - 28%)');
-    console.log('✅ Tasks: 28 tasks (TODO, IN_PROGRESS, DONE)');
-    console.log('💬 Comments: 16 comments từ các thành viên');
-    console.log('🔔 Notifications: 13 thông báo thực tế');
-    console.log('📊 Activity Logs: 13 hoạt động được ghi nhận');
+    console.log('   ├─ AI Chatbot Platform (HIGH - ACTIVE - 28%)');
+    console.log('   ├─ Task Approval System Testing (HIGH - ACTIVE - 0%) ⭐ TEST');
+    console.log('   └─ Feature Development Sprint (MEDIUM - ACTIVE - 0%) ⭐ TEST');
+    console.log('✅ Tasks: 36 tasks (TODO, IN_PROGRESS, DONE)');
+    console.log('   └─ 8 tasks trong Test Workspace cho approval workflow testing');
+    console.log('💬 Comments: 22 comments từ các thành viên');
+    console.log('🔔 Notifications: 19 thông báo thực tế');
+    console.log('📊 Activity Logs: 21 hoạt động được ghi nhận');
     console.log('='.repeat(65));
     console.log('\n👥 TÀI KHOẢN TEST (Tất cả password: 123456):');
     console.log('\n🔴 QUẢN LÝ & ADMIN:');
@@ -1003,18 +1333,29 @@ const seedData = async () => {
     console.log('     • Đại diện khách hàng');
     console.log('   ✦ product@gmail.com - Product Owner');
     console.log('     • Quản lý AI Chatbot project');
+    console.log('\n⭐ TEST WORKSPACE - APPROVAL WORKFLOW:');
+    console.log('   🏢 Team Lead Development Hub (lead@gmail.com là owner)');
+    console.log('   👥 Members:');
+    console.log('      • lead@gmail.com - Team Lead (ADMIN)');
+    console.log('      • dev@gmail.com - Developer (MEMBER)');
+    console.log('      • designer@gmail.com - Designer (MEMBER)');
+    console.log('      • tester@gmail.com - QA Tester (MEMBER)');
+    console.log('   📁 Projects:');
+    console.log('      • Task Approval System Testing (5 tasks)');
+    console.log('      • Feature Development Sprint (3 tasks)');
     console.log('\n🎯 TÍNH NĂNG HOẠT ĐỘNG HOÀN CHỈNH:');
-    console.log('   ✓ Multi-Workspace Support (2 workspaces riêng biệt)');
+    console.log('   ✓ Multi-Workspace Support (3 workspaces riêng biệt)');
     console.log('   ✓ Authentication & Authorization (JWT)');
     console.log('   ✓ Role-based Access Control (Admin, Lead, Member, Viewer)');
-    console.log('   ✓ Project Management (7 projects đa dạng)');
-    console.log('   ✓ Task Assignment & Tracking (28 tasks với assignee)');
-    console.log('   ✓ Comments & Collaboration (16 comments thực tế)');
-    console.log('   ✓ Real-time Notifications (13 notifications)');
+    console.log('   ✓ Project Management (9 projects đa dạng)');
+    console.log('   ✓ Task Assignment & Tracking (36 tasks với assignee)');
+    console.log('   ✓ Comments & Collaboration (22 comments thực tế)');
+    console.log('   ✓ Real-time Notifications (19 notifications)');
     console.log('   ✓ Activity Logs & Audit Trail');
     console.log('   ✓ Team Members Management');
     console.log('   ✓ Dashboard & Analytics');
     console.log('   ✓ Permission Checks trên mọi actions');
+    console.log('   ✓ Task Approval Workflow (Submit → Approve/Reject) ⭐ NEW');
     console.log('\n📖 TÀI LIỆU & HƯỚNG DẪN:');
     console.log('   → backend/TESTING_PERMISSIONS.md - Chi tiết phân quyền');
     console.log('   → backend/PERMISSION_SYSTEM.md - Hệ thống permissions');
@@ -1024,13 +1365,20 @@ const seedData = async () => {
     console.log('\n💡 HƯỚNG DẪN TEST:');
     console.log('   1️⃣  ĐĂNG XUẤT tài khoản hiện tại (nếu có)');
     console.log('   2️⃣  XÓA CACHE trình duyệt: Ctrl + Shift + Delete');
-    console.log('   3️⃣  ĐĂNG NHẬP lại với dev@gmail.com (password: 123456)');
-    console.log('   4️⃣  Click vào NOTIFICATION BELL 🔔');
-    console.log('   5️⃣  Click vào notification → Sẽ thấy assignee đúng');
-    console.log('\n🔥 TEST ĐA NGƯỜI DÙNG:');
-    console.log('   • Tab 1: admin@gmail.com - Tạo tasks mới');
-    console.log('   • Tab 2 (Incognito): dev@gmail.com - Nhận notifications');
-    console.log('   • Kiểm tra realtime updates');
+    console.log('   3️⃣  ĐĂNG NHẬP lại với lead@gmail.com (password: 123456)');
+    console.log('   4️⃣  Chọn workspace "Team Lead Development Hub"');
+    console.log('   5️⃣  Vào project "Task Approval System Testing"');
+    console.log('   6️⃣  Test approval workflow với các tasks có sẵn');
+    console.log('\n🔥 TEST APPROVAL WORKFLOW:');
+    console.log('   • Tab 1 (lead@gmail.com): Assign task và approve/reject');
+    console.log('   • Tab 2 (Incognito - dev@gmail.com): Submit for approval');
+    console.log('   • Tab 3 (Incognito - tester@gmail.com): Test notifications');
+    console.log('   • Kiểm tra realtime approval updates');
+    console.log('\n🎯 SCENARIO TEST:');
+    console.log('   1. dev@gmail.com: Hoàn thành checklist → Submit for approval');
+    console.log('   2. lead@gmail.com: Xem pending approvals → Approve/Reject');
+    console.log('   3. Kiểm tra notification bell 🔔 cho cả 2 users');
+    console.log('   4. Xem approval history timeline trong task details');
     console.log('\n✨ MỌI THỨ ĐÃ SẴN SÀNG! Happy Testing! 🚀\n');
 
     process.exit(0);

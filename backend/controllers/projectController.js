@@ -30,7 +30,33 @@ export const getProjects = asyncHandler(async (req, res) => {
     .populate('team_lead', 'name email image')
     .populate('workspaceId', 'name slug');
 
-  return successResponse(res, 200, 'Projects retrieved successfully', projects);
+  // Check if current user is workspace admin or member of each project
+  const isWorkspaceAdmin = isMember.role === 'ADMIN';
+  
+  const projectsWithMembershipInfo = await Promise.all(
+    projects.map(async (project) => {
+      // Workspace admin can access all projects
+      if (isWorkspaceAdmin) {
+        return {
+          ...project.toObject(),
+          isMember: true,
+        };
+      }
+      
+      // Check if user is project member
+      const isProjectMember = await ProjectMember.findOne({
+        userId: req.user._id,
+        projectId: project._id,
+      });
+      
+      return {
+        ...project.toObject(),
+        isMember: !!isProjectMember,
+      };
+    })
+  );
+
+  return successResponse(res, 200, 'Projects retrieved successfully', projectsWithMembershipInfo);
 });
 
 // @desc    Get project by ID with details

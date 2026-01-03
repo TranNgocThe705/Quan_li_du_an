@@ -56,6 +56,21 @@ const ProjectTasks = ({ tasks }) => {
 
     const handleStatusChange = async (taskId, newStatus) => {
         try {
+            // Find the task to check current status
+            const task = tasks.find(t => t._id === taskId);
+            
+            // Prevent changing TO PENDING_APPROVAL via dropdown
+            if (newStatus === 'PENDING_APPROVAL' && task?.status !== 'PENDING_APPROVAL') {
+                toast.error('Không thể chuyển trực tiếp sang "Chờ duyệt". Vui lòng mở task và sử dụng nút "Đánh dấu hoàn thành"');
+                return;
+            }
+            
+            // Prevent changing FROM PENDING_APPROVAL via dropdown
+            if (task?.status === 'PENDING_APPROVAL' && newStatus !== 'PENDING_APPROVAL') {
+                toast.error('Công việc đang chờ duyệt. Vui lòng phê duyệt hoặc từ chối trong trang chi tiết task');
+                return;
+            }
+            
             // Dispatch update task with API call
             await dispatch(updateTask({
                 id: taskId,
@@ -92,6 +107,7 @@ const ProjectTasks = ({ tasks }) => {
                             { label: "Tất Cả Trạng Thái", value: "" },
                             { label: "Cần Làm", value: "TODO" },
                             { label: "Đang Làm", value: "IN_PROGRESS" },
+                            { label: "Chờ Duyệt", value: "PENDING_APPROVAL" },
                             { label: "Hoàn Thành", value: "DONE" },
                         ],
                         type: [
@@ -187,6 +203,9 @@ const ProjectTasks = ({ tasks }) => {
                                                     <select name="status" onChange={(e) => handleStatusChange(task._id, e.target.value)} value={task.status} className="group-hover:ring ring-zinc-100 outline-none px-2 pr-4 py-1 rounded text-sm text-zinc-900 dark:text-zinc-200 cursor-pointer" >
                                                         <option value="TODO">Cần Làm</option>
                                                         <option value="IN_PROGRESS">Đang Làm</option>
+                                                        {task.status === 'PENDING_APPROVAL' && (
+                                                            <option value="PENDING_APPROVAL">Chờ Duyệt</option>
+                                                        )}
                                                         <option value="DONE">Hoàn Thành</option>
                                                     </select>
                                                 </td>
@@ -246,6 +265,9 @@ const ProjectTasks = ({ tasks }) => {
                                             <select name="status" onChange={(e) => handleStatusChange(task._id, e.target.value)} value={task.status} className="w-full mt-1 bg-zinc-100 dark:bg-zinc-800 ring-1 ring-zinc-300 dark:ring-zinc-700 outline-none px-2 py-1 rounded text-sm text-zinc-900 dark:text-zinc-200" >
                                                 <option value="TODO">Cần Làm</option>
                                                 <option value="IN_PROGRESS">Đang Làm</option>
+                                                {task.status === 'PENDING_APPROVAL' && (
+                                                    <option value="PENDING_APPROVAL">Chờ Duyệt</option>
+                                                )}
                                                 <option value="DONE">Hoàn Thành</option>
                                             </select>
                                         </div>

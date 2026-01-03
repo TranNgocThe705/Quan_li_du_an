@@ -7,13 +7,20 @@ import {
   updateTask,
   deleteTask,
   getMyTasks,
+  submitTaskForApproval,
+  approveTask,
+  rejectTask,
+  updateChecklistItem,
+  getChecklistProgress,
+  bypassApproval,
+  getPendingApprovalTasks,
 } from '../controllers/taskController.js';
 import { protect } from '../middleware/auth.js';
 import { validate } from '../middleware/validation.js';
 import { 
   checkTaskAccess,
   checkTaskManagePermission,
-  checkWorkspaceAccessFromProject 
+  checkProjectMember
 } from '../middleware/checkPermission.js';
 
 const router = express.Router();
@@ -26,7 +33,7 @@ const createTaskValidation = [
   body('due_date').isISO8601().withMessage('Valid due date is required'),
   body('status')
     .optional()
-    .isIn(['TODO', 'IN_PROGRESS', 'DONE'])
+    .isIn(['TODO', 'IN_PROGRESS', 'PENDING_APPROVAL', 'DONE'])
     .withMessage('Invalid status'),
   body('type')
     .optional()
@@ -39,7 +46,7 @@ const updateTaskValidation = [
   body('title').optional().trim().notEmpty().withMessage('Task title cannot be empty'),
   body('status')
     .optional()
-    .isIn(['TODO', 'IN_PROGRESS', 'DONE'])
+    .isIn(['TODO', 'IN_PROGRESS', 'PENDING_APPROVAL', 'DONE'])
     .withMessage('Invalid status'),
   body('type')
     .optional()
@@ -51,10 +58,21 @@ const updateTaskValidation = [
 
 // Task routes
 router.get('/my-tasks', protect, getMyTasks);
+router.get('/pending-approval', protect, getPendingApprovalTasks);
 router.get('/', protect, getTasks); // Query param: projectId (checked in controller)
-router.post('/', protect, checkWorkspaceAccessFromProject, createTaskValidation, validate, createTask);
+router.post('/', protect, checkProjectMember, createTaskValidation, validate, createTask); // Changed to checkProjectMember
 router.get('/:id', protect, checkTaskAccess, getTaskById);
 router.put('/:id', protect, checkTaskManagePermission, updateTaskValidation, validate, updateTask);
+router.post('/:id/submit-for-approval', protect, submitTaskForApproval); // Member submits task
+router.put('/:id/approve', protect, approveTask); // Team Lead approves task
+router.put('/:id/reject', protect, [
+  body('reason').trim().notEmpty().withMessage('Rejection reason is required')
+], validate, rejectTask); // Team Lead rejects task
+router.post('/:id/bypass-approval', protect, [
+  body('reason').trim().notEmpty().withMessage('Bypass reason is required')
+], validate, bypassApproval); // Emergency bypass
+router.patch('/:id/checklist/:itemId', protect, updateChecklistItem); // Update checklist item
+router.get('/:id/checklist/progress', protect, getChecklistProgress); // Get checklist progress
 router.delete('/:id', protect, checkTaskManagePermission, deleteTask);
 
 export default router;

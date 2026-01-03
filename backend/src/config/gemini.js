@@ -23,7 +23,7 @@ export const getModel = (modelName = 'gemini-2.5-flash') => {
       temperature: 0.7,
       topP: 0.95,
       topK: 40,
-      maxOutputTokens: 1024,
+      maxOutputTokens: 8192, // Increased for longer AI responses
     }
   });
 };

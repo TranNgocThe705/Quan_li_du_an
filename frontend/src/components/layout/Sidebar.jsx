@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import MyTasksSidebar from './MyTasksSidebar'
 import ProjectSidebar from './ProjectsSidebar'
 import WorkspaceDropdown from '../features/workspaces/WorkspaceDropdown'
-import { FolderOpenIcon, LayoutDashboardIcon, SettingsIcon, UsersIcon } from 'lucide-react'
+import { FolderOpenIcon, LayoutDashboardIcon, SettingsIcon, UsersIcon, CheckSquare } from 'lucide-react'
 
 const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
@@ -13,6 +13,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
     const menuItems = [
         { name: t('sidebar.dashboard'), href: '/', icon: LayoutDashboardIcon },
         { name: t('sidebar.projects'), href: '/projects', icon: FolderOpenIcon },
+        { name: 'Chờ Duyệt', href: '/pending-approvals', icon: CheckSquare },
         { name: t('sidebar.team'), href: '/team', icon: UsersIcon },
         { name: t('sidebar.settings'), href: '/settings', icon: SettingsIcon },
     ]

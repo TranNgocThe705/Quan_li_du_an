@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import connectDB from './config/database.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import passport from './config/passport.js';
+import CronService from './services/cronService.js';
 
 // Import routes
 import authRoutes from './routes/authRoutes.js';
@@ -18,6 +19,7 @@ import permissionRoutes from './routes/permissionRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
+import approvalPolicyRoutes from './routes/approvalPolicyRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -92,6 +94,7 @@ app.use('/api/permissions', permissionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/approval-policies', approvalPolicyRoutes);
 
 // Error handling middleware
 app.use(notFound);
@@ -106,6 +109,9 @@ const startServer = async () => {
   try {
     // Connect to database first
     await connectDB();
+    
+    // Start cron jobs
+    CronService.start();
     
     // Then start the server
     server = app.listen(PORT, () => {
@@ -159,6 +165,7 @@ process.on('uncaughtException', (err) => {
 // Handle SIGTERM signal (graceful shutdown)
 process.on('SIGTERM', () => {
   console.log('\n👋 SIGTERM signal received: closing HTTP server gracefully');
+  CronService.stop();
   if (server) {
     server.close(() => {
       console.log('HTTP server closed');
@@ -170,6 +177,7 @@ process.on('SIGTERM', () => {
 // Handle SIGINT signal (Ctrl+C)
 process.on('SIGINT', () => {
   console.log('\n👋 SIGINT signal received: closing HTTP server gracefully');
+  CronService.stop();
   if (server) {
     server.close(() => {
       console.log('HTTP server closed');

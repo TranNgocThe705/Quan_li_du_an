@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeftIcon, PlusIcon, SettingsIcon, BarChart3Icon, CalendarIcon, FileStackIcon, ZapIcon, Sparkles } from "lucide-react";
+import { ArrowLeftIcon, PlusIcon, SettingsIcon, BarChart3Icon, CalendarIcon, FileStackIcon, ZapIcon, Sparkles, Kanban } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import ProjectAnalytics from "../../components/features/projects/ProjectAnalytics";
@@ -9,6 +9,7 @@ import ProjectSettings from "../../components/features/projects/ProjectSettings"
 import CreateTaskDialog from "../../components/features/tasks/CreateTaskDialog";
 import ProjectCalendar from "../../components/features/projects/ProjectCalendar";
 import ProjectTasks from "../../components/features/projects/ProjectTasks";
+import SprintPlanningBoard from "../../components/features/projects/SprintPlanningBoard";
 import AIProjectInsights from "../../components/features/ai/AIProjectInsights";
 import { fetchProjectById } from "../../features/projectSlice";
 import { fetchTasks } from "../../features/taskSlice";
@@ -123,6 +124,7 @@ export default function ProjectDetail() {
                 <div className="inline-flex flex-wrap max-sm:grid grid-cols-3 gap-2 border border-zinc-200 dark:border-zinc-800 rounded overflow-hidden">
                     {[
                         { key: "tasks", label: t('projectDetail.tasks'), icon: FileStackIcon },
+                        { key: "sprint-board", label: t('projectDetail.sprintBoard') || "Sprint Board", icon: Kanban },
                         { key: "calendar", label: t('projectDetail.calendar'), icon: CalendarIcon },
                         { key: "analytics", label: t('projectDetail.analytics'), icon: BarChart3Icon },
                         { key: "ai-insights", label: "AI Insights", icon: Sparkles },
@@ -139,6 +141,11 @@ export default function ProjectDetail() {
                     {activeTab === "tasks" && (
                         <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
                             <ProjectTasks tasks={tasks} />
+                        </div>
+                    )}
+                    {activeTab === "sprint-board" && (
+                        <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
+                            <SprintPlanningBoard tasks={tasks} />
                         </div>
                     )}
                     {activeTab === "analytics" && (

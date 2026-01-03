@@ -5,6 +5,7 @@ import Task from '../models/Task.js';
 import ProjectMember from '../models/ProjectMember.js';
 import Project from '../models/Project.js';
 import { notifyTaskComment } from '../utils/notificationHelper.js';
+import { emitNewComment, emitUpdateComment, emitDeleteComment } from '../config/socket.js';
 
 // @desc    Get all comments for a task
 // @route   GET /api/comments?taskId=xxx
@@ -93,6 +94,9 @@ export const createComment = asyncHandler(async (req, res) => {
     console.log('⚠️ Not sending notification - commenting on own task');
   }
 
+  // Emit real-time event
+  emitNewComment(taskId, populatedComment);
+
   return successResponse(res, 201, 'Comment added successfully', populatedComment);
 });
 
@@ -119,6 +123,12 @@ export const updateComment = asyncHandler(async (req, res) => {
     'name email image'
   );
 
+  // Emit real-time event
+  const task = await Task.findById(comment.taskId);
+  if (task) {
+    emitUpdateComment(task._id.toString(), populatedComment);
+  }
+
   return successResponse(res, 200, 'Comment updated successfully', populatedComment);
 });
 
@@ -137,7 +147,13 @@ export const deleteComment = asyncHandler(async (req, res) => {
     return errorResponse(res, 403, 'Access denied. You can only delete your own comments');
   }
 
+  const taskId = comment.taskId;
+  const commentId = comment._id;
+  
   await comment.deleteOne();
+
+  // Emit real-time event
+  emitDeleteComment(taskId.toString(), commentId.toString());
 
   return successResponse(res, 200, 'Comment deleted successfully');
 });

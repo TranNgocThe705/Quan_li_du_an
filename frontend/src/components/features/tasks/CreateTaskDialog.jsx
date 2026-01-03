@@ -23,14 +23,29 @@ export default function CreateTaskDialog({ showCreateTask, setShowCreateTask, pr
 
     // Kiểm tra role của user hiện tại
     const userWorkspaceMember = currentWorkspace?.members?.find(m => m.userId?._id === user?._id);
+    const userProjectMember = currentProject?.members?.find(m => m.userId?._id === user?._id);
     
-    // User là MANAGER hoặc TEAM_LEAD nếu:
-    // - Là team_lead của project
-    // - Hoặc là MANAGER trong workspace
+    // User có thể assign cho người khác nếu:
+    // - Là LEAD trong project (role LEAD trong ProjectMember)
+    // - Hoặc là ADMIN trong workspace (role ADMIN trong WorkspaceMember)
+    // - Hoặc là team_lead của project
     // - Hoặc là System Admin
-    const isTeamLead = currentProject?.team_lead?._id === user?._id;
-    const isWorkspaceManager = userWorkspaceMember?.role === 'MANAGER';
-    const canAssignToOthers = isTeamLead || isWorkspaceManager || user?.isSystemAdmin;
+    const isProjectLead = userProjectMember?.role === 'LEAD';
+    const isWorkspaceAdmin = userWorkspaceMember?.role === 'ADMIN';
+    const isTeamLeadOfProject = currentProject?.team_lead?._id === user?._id;
+    const canAssignToOthers = isProjectLead || isWorkspaceAdmin || isTeamLeadOfProject || user?.isSystemAdmin;
+    
+    console.log('🔐 Permission check:', {
+        userId: user?._id,
+        userEmail: user?.email,
+        isProjectLead,
+        isWorkspaceAdmin,
+        isTeamLeadOfProject,
+        canAssignToOthers,
+        projectMemberRole: userProjectMember?.role,
+        workspaceMemberRole: userWorkspaceMember?.role,
+        teamMembers: teamMembers?.length
+    });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [aiSuggestions, setAiSuggestions] = useState(null);

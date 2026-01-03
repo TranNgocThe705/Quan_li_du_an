@@ -24,6 +24,13 @@ const notificationSchema = new mongoose.Schema(
         'TASK_DUE_SOON',
         'TASK_OVERDUE',
         'TASK_COMMENT',
+        'TASK_APPROVED',
+        'TASK_REJECTED',
+        'TASK_APPROVAL_REQUIRED',
+        'TASK_AUTO_APPROVED',
+        'TASK_APPROVAL_ESCALATED',
+        'TASK_APPROVAL_BYPASSED',
+        'TASK_SUBMITTED_FOR_APPROVAL',
         // Project notifications
         'PROJECT_MEMBER_ADDED',
         'PROJECT_UPDATED',

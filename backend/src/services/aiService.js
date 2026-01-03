@@ -3,6 +3,34 @@ import User from '../models/User.js';
 import Task from '../models/Task.js';
 import ProjectMember from '../models/ProjectMember.js';
 
+/**
+ * Helper function to extract and parse JSON from AI response
+ * Handles markdown code blocks and extra text
+ */
+function extractJSON(text) {
+  let cleaned = '';
+  try {
+    // Remove markdown code blocks if present
+    cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+    
+    // Try to find JSON object - use greedy match
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Không tìm thấy JSON trong response');
+    }
+    
+    // Parse JSON
+    const parsed = JSON.parse(jsonMatch[0]);
+    return parsed;
+  } catch (error) {
+    console.error('❌ JSON parse error:', error.message);
+    console.error('📝 Raw text length:', text.length);
+    console.error('📝 Cleaned text:', cleaned.substring(0, 500));
+    console.error('📝 Full raw text:', text);
+    throw new Error('AI không trả về đúng định dạng JSON: ' + error.message);
+  }
+}
+
 class AIService {
   /**
    * Gợi ý người được phân công tốt nhất cho task
@@ -93,12 +121,7 @@ Chỉ trả về JSON, không thêm text nào khác.
       const text = response.text();
 
       // Parse JSON từ response
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('AI không trả về đúng định dạng JSON');
-      }
-
-      const aiResponse = JSON.parse(jsonMatch[0]);
+      const aiResponse = extractJSON(text);
 
       return {
         success: true,
@@ -190,12 +213,7 @@ TRẢ LỜI JSON:
       const response = await result.response;
       const text = response.text();
 
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('AI không trả về đúng định dạng JSON');
-      }
-
-      const aiResponse = JSON.parse(jsonMatch[0]);
+      const aiResponse = extractJSON(text);
 
       return {
         success: true,
@@ -280,15 +298,10 @@ TRẢ LỜI JSON:
       const response = await result.response;
       const text = response.text();
 
-      console.log('🤖 AI raw response:', text);
+      console.log('🤖 AI raw response length:', text.length, 'chars');
+      console.log('🤖 AI response preview:', text.substring(0, 100) + '...');
 
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        console.error('❌ AI response is not valid JSON');
-        throw new Error('AI không trả về đúng định dạng JSON');
-      }
-
-      const aiResponse = JSON.parse(jsonMatch[0]);
+      const aiResponse = extractJSON(text);
       console.log('✅ AI analysis complete:', aiResponse);
 
       return {
@@ -349,12 +362,7 @@ TRẢ LỜI JSON:
       const response = await result.response;
       const text = response.text();
 
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('AI không trả về đúng định dạng JSON');
-      }
-
-      const aiResponse = JSON.parse(jsonMatch[0]);
+      const aiResponse = extractJSON(text);
 
       return {
         success: true,

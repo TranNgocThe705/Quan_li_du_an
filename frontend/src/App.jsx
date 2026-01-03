@@ -14,6 +14,7 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import GoogleAuthCallback from "./pages/auth/GoogleAuthCallback";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import PendingApprovalsPage from "./pages/PendingApprovalsPage";
 import ProtectedRoute from "./components/guards/ProtectedRoute";
 import ProtectedAdminRoute from "./components/guards/ProtectedAdminRoute";
 import AIChatWidget from "./components/features/ai/AIChatWidget";
@@ -82,6 +83,7 @@ const App = () => {
                     <Route path="projects" element={<Projects />} />
                     <Route path="projectsDetail" element={<ProjectDetails />} />
                     <Route path="taskDetails" element={<TaskDetails />} />
+                    <Route path="pending-approvals" element={<PendingApprovalsPage />} />
                 </Route>
 
                 {/* Admin routes */}

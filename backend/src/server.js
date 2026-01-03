@@ -4,14 +4,17 @@
  */
 
 import dotenv from 'dotenv';
+import { createServer } from 'http';
 import app from './app.js';
 import connectDB from './config/database.js';
+import initializeSocket from './config/socket.js';
 
 // Load environment variables
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 let server;
+let io;
 
 /**
  * Start the server
@@ -21,11 +24,19 @@ const startServer = async () => {
     // Connect to database first
     await connectDB();
     
-    // Then start the HTTP server
-    server = app.listen(PORT, () => {
+    // Create HTTP server
+    const httpServer = createServer(app);
+    
+    // Initialize Socket.IO
+    io = initializeSocket(httpServer);
+    console.log('✅ Socket.IO initialized');
+    
+    // Start the HTTP server
+    server = httpServer.listen(PORT, () => {
       console.log(`\n🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
       console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
-      console.log(`🔗 Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}\n`);
+      console.log(`🔗 Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+      console.log(`🔌 WebSocket ready for real-time features\n`);
     });
   } catch (error) {
     console.error(`❌ Failed to start server: ${error.message}`);
@@ -39,6 +50,11 @@ const startServer = async () => {
  */
 const gracefulShutdown = (signal) => {
   console.log(`\n👋 ${signal} signal received: closing HTTP server gracefully`);
+  if (io) {
+    io.close(() => {
+      console.log('Socket.IO connections closed');
+    });
+  }
   if (server) {
     server.close(() => {
       console.log('HTTP server closed');

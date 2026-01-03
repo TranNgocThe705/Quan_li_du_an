@@ -4,14 +4,23 @@ import Sidebar from '../components/layout/Sidebar'
 import { Outlet } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { loadTheme } from '../features/themeSlice'
+import { fetchWorkspaces } from '../features/workspaceSlice'
+import { initializeSocket } from '../services/socket'
 
 const Layout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const dispatch = useDispatch()
 
-    // Initial load of theme
+    // Initial load of theme and workspaces
     useEffect(() => {
         dispatch(loadTheme())
+        dispatch(fetchWorkspaces())
+        
+        // Initialize Socket.IO for real-time features
+        const token = localStorage.getItem('token')
+        if (token) {
+            initializeSocket(token)
+        }
     }, [dispatch])
 
     return (

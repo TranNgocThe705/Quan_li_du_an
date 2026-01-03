@@ -14,8 +14,10 @@ function MyTasksSidebar() {
         switch (status) {
             case 'DONE':
                 return 'bg-green-500';
-            case 'IN_PROGRESS':
+            case 'PENDING_APPROVAL':
                 return 'bg-yellow-500';
+            case 'IN_PROGRESS':
+                return 'bg-blue-500';
             case 'TODO':
                 return 'bg-gray-500 dark:bg-zinc-500';
             default:
@@ -26,6 +28,7 @@ function MyTasksSidebar() {
     const statusLabels = {
         'TODO': 'Cần làm',
         'IN_PROGRESS': 'Đang thực hiện',
+        'PENDING_APPROVAL': 'Chờ duyệt',
         'DONE': 'Hoàn thành'
     };
 

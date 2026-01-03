@@ -46,4 +46,21 @@ export const taskAPI = {
     const validId = typeof id === 'string' ? id : id?.toString();
     return API.delete(`/tasks/${validId}`);
   },
+  // Approval endpoints
+  submitForApproval: (id) => {
+    const validId = typeof id === 'string' ? id : id?.toString();
+    return API.post(`/tasks/${validId}/submit-for-approval`);
+  },
+  approveTask: (id) => {
+    const validId = typeof id === 'string' ? id : id?.toString();
+    return API.put(`/tasks/${validId}/approve`);
+  },
+  rejectTask: (id, reason) => {
+    const validId = typeof id === 'string' ? id : id?.toString();
+    return API.put(`/tasks/${validId}/reject`, { reason });
+  },
+  getPendingApprovals: (projectId) => {
+    const validProjectId = typeof projectId === 'string' ? projectId : projectId?.toString();
+    return API.get(`/tasks/pending-approval?projectId=${validProjectId}`);
+  },
 };
