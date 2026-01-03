@@ -14,3 +14,4 @@ export { adminAPI } from './services/admin.service.js';
 export { aiAPI } from './services/ai.service.js';
 export { permissionAPI } from './services/permission.service.js';
 export { dashboardAPI } from './services/dashboard.service.js';
+export { progressAPI } from './services/progress.service.js';

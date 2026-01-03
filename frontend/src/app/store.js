@@ -7,6 +7,7 @@ import taskReducer from '../features/taskSlice'
 import permissionReducer from '../features/permissionSlice'
 import notificationReducer from '../features/notificationSlice'
 import adminReducer from '../features/adminSlice'
+import progressReducer from '../features/progressSlice'
 
 export const store = configureStore({
     reducer: {
@@ -18,5 +19,6 @@ export const store = configureStore({
         permissions: permissionReducer,
         notification: notificationReducer,
         admin: adminReducer,
+        progress: progressReducer,
     },
 })

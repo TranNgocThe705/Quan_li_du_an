@@ -16,6 +16,7 @@ import notificationRoutes from './notificationRoutes.js';
 import aiRoutes from './aiRoutes.js';
 import dashboardRoutes from './dashboardRoutes.js';
 import attachmentRoutes from './attachment.routes.js';
+import progressRoutes from './progressRoutes.js';
 
 const router = express.Router();
 
@@ -31,6 +32,7 @@ router.use('/admin', adminRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/ai', aiRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/progress', progressRoutes);
 router.use('/', attachmentRoutes); // Mount at root to support /tasks/:id/attachments
 
 export default router;

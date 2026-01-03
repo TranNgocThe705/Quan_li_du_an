@@ -7,7 +7,7 @@ let socket = null;
  * @param {string} token - JWT token for authentication
  */
 export const initializeSocket = (token) => {
-  if (socket) {
+  if (socket && socket.connected) {
     return socket;
   }
 
@@ -21,6 +21,7 @@ export const initializeSocket = (token) => {
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     reconnectionAttempts: 5,
+    transports: ['websocket', 'polling'],
   });
 
   socket.on('connect', () => {
@@ -28,11 +29,16 @@ export const initializeSocket = (token) => {
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('❌ Socket.IO disconnected:', reason);
+    console.log('⚠️ Socket.IO disconnected:', reason);
+    socket = null;
   });
 
   socket.on('connect_error', (error) => {
-    console.error('Socket connection error:', error.message);
+    console.error('🔴 Socket connection error:', error.message || error);
+  });
+
+  socket.on('error', (error) => {
+    console.error('🔴 Socket error:', error);
   });
 
   return socket;
@@ -43,7 +49,7 @@ export const initializeSocket = (token) => {
  */
 export const getSocket = () => {
   if (!socket) {
-    console.warn('Socket not initialized. Call initializeSocket() first.');
+    console.warn('⚠️ Socket not initialized. Call initializeSocket() first.');
   }
   return socket;
 };
@@ -65,7 +71,7 @@ export const disconnectSocket = () => {
  */
 export const joinTaskRoom = (taskId) => {
   const currentSocket = getSocket();
-  if (currentSocket) {
+  if (currentSocket && currentSocket.connected) {
     currentSocket.emit('task:join', taskId);
     console.log(`Joined task room: ${taskId}`);
   }
@@ -77,7 +83,7 @@ export const joinTaskRoom = (taskId) => {
  */
 export const leaveTaskRoom = (taskId) => {
   const currentSocket = getSocket();
-  if (currentSocket) {
+  if (currentSocket && currentSocket.connected) {
     currentSocket.emit('task:leave', taskId);
     console.log(`Left task room: ${taskId}`);
   }
@@ -89,7 +95,7 @@ export const leaveTaskRoom = (taskId) => {
  */
 export const emitTypingStart = (taskId) => {
   const currentSocket = getSocket();
-  if (currentSocket) {
+  if (currentSocket && currentSocket.connected) {
     currentSocket.emit('comment:typing:start', taskId);
   }
 };
@@ -100,7 +106,7 @@ export const emitTypingStart = (taskId) => {
  */
 export const emitTypingStop = (taskId) => {
   const currentSocket = getSocket();
-  if (currentSocket) {
+  if (currentSocket && currentSocket.connected) {
     currentSocket.emit('comment:typing:stop', taskId);
   }
 };

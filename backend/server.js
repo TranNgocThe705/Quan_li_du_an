@@ -3,10 +3,12 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
+import { createServer } from 'http';
 import connectDB from './config/database.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import passport from './config/passport.js';
 import CronService from './services/cronService.js';
+import initializeSocket from './config/socket.js';
 
 // Import routes
 import authRoutes from './routes/authRoutes.js';
@@ -20,6 +22,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import approvalPolicyRoutes from './routes/approvalPolicyRoutes.js';
+import progressRoutes from './routes/progressRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -95,6 +98,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/approval-policies', approvalPolicyRoutes);
+app.use('/api/progress', progressRoutes);
 
 // Error handling middleware
 app.use(notFound);
@@ -110,14 +114,22 @@ const startServer = async () => {
     // Connect to database first
     await connectDB();
     
+    // Create HTTP server
+    const httpServer = createServer(app);
+    
+    // Initialize Socket.IO
+    const io = initializeSocket(httpServer);
+    console.log('✅ Socket.IO initialized');
+    
     // Start cron jobs
     CronService.start();
     
     // Then start the server
-    server = app.listen(PORT, () => {
+    server = httpServer.listen(PORT, () => {
       console.log(`\n🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
       console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
-      console.log(`🔗 Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}\n`);
+      console.log(`🔗 Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
+      console.log(`🔌 WebSocket ready for real-time features\n`);
     });
   } catch (error) {
     console.error(`❌ Failed to start server: ${error.message}`);

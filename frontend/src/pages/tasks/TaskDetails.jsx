@@ -5,9 +5,12 @@ import { ArrowLeftIcon, Edit2Icon, Trash2Icon, CalendarIcon, UserIcon, TagIcon, 
 import { useTranslation } from "react-i18next";
 import { fetchTaskById, updateTask, deleteTask, fetchComments, createComment, deleteComment } from "../../features/taskSlice";
 import { getUserById } from "../../features/authSlice";
+import { getTaskProgress } from "../../features/progressSlice";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import ChatComments from "../../components/tasks/ChatComments";
+import DailyProgressForm from "../../components/tasks/DailyProgressForm";
+import ProgressTimeline from "../../components/tasks/ProgressTimeline";
 import FileUpload from "../../components/tasks/FileUpload";
 import AttachmentList from "../../components/tasks/AttachmentList";
 import ApprovalHistory from "../../components/tasks/ApprovalHistory";
@@ -48,6 +51,7 @@ export default function TaskDetails() {
     const { t } = useTranslation();
     
     const { currentTask: task, loading, error, comments } = useSelector(state => state.task);
+    const { progress } = useSelector(state => state.progress);
 
     const { user } = useSelector(state => state.auth);
     
@@ -57,6 +61,7 @@ export default function TaskDetails() {
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectionReason, setRejectionReason] = useState("");
     const [permissionError, setPermissionError] = useState(null);
+    const [showProgressForm, setShowProgressForm] = useState(false);
     
     // Real-time features
     const [typingUsers, setTypingUsers] = useState([]);
@@ -88,6 +93,13 @@ export default function TaskDetails() {
                         toast.error(err || 'Bạn không có quyền xem chi tiết công việc này');
                     }
                 });
+        }
+    }, [dispatch, taskId]);
+
+    // Fetch progress for task
+    useEffect(() => {
+        if (taskId) {
+            dispatch(getTaskProgress({ taskId }));
         }
     }, [dispatch, taskId]);
 
@@ -545,6 +557,54 @@ export default function TaskDetails() {
                     {/* Approval History */}
                     {task?.approvalRequests && task.approvalRequests.length > 0 && (
                         <ApprovalHistory task={task} />
+                    )}
+
+                    {/* Daily Progress Section - For Assignee to report, Team Lead/Admin to view */}
+                    {task && (
+                        (task?.assigneeId?._id === user?._id || task?.assigneeId === user?._id) || 
+                        task?.projectId?.team_lead === user?._id
+                    ) && (
+                        <div className="space-y-4">
+                            {/* Progress Form Toggle - Only for assignee */}
+                            {(task?.assigneeId?._id === user?._id || task?.assigneeId === user?._id) && (
+                                <div className="flex justify-between items-center bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                                    <p className="text-sm text-blue-900 dark:text-blue-200">
+                                        Báo cáo tiến độ hằng ngày giúp team lead nắm bắt được tình hình công việc của bạn
+                                    </p>
+                                    <button
+                                        onClick={() => setShowProgressForm(!showProgressForm)}
+                                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors whitespace-nowrap"
+                                    >
+                                        {showProgressForm ? 'Ẩn form' : 'Báo cáo tiến độ'}
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Progress Form - Only for assignee */}
+                            {showProgressForm && (task?.assigneeId?._id === user?._id || task?.assigneeId === user?._id) && (
+                                <DailyProgressForm 
+                                    taskId={taskId}
+                                    onSuccess={() => {
+                                        dispatch(getTaskProgress({ taskId }));
+                                        setShowProgressForm(false);
+                                    }}
+                                />
+                            )}
+
+                            {/* Progress Timeline - For everyone who can access */}
+                            {progress && progress.length > 0 && (
+                                <ProgressTimeline progress={progress} />
+                            )}
+                            
+                            {/* Show message if no progress yet */}
+                            {(!progress || progress.length === 0) && (
+                                <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-lg p-4 text-center">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        Chưa có báo cáo tiến độ nào
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     )}
 
                     {/* Comments */}
