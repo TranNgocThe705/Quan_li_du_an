@@ -4,6 +4,7 @@ import Comment from '../models/Comment.js';
 import Task from '../models/Task.js';
 import ProjectMember from '../models/ProjectMember.js';
 import Project from '../models/Project.js';
+import WorkspaceMember from '../models/WorkspaceMember.js';
 import { notifyTaskComment } from '../utils/notificationHelper.js';
 import { emitNewComment, emitUpdateComment, emitDeleteComment } from '../config/socket.js';
 
@@ -18,26 +19,44 @@ export const getComments = asyncHandler(async (req, res) => {
   }
 
   // Check if task exists
-  const task = await Task.findById(taskId);
+  const task = await Task.findById(taskId).populate('projectId');
   if (!task) {
     return errorResponse(res, 404, 'Task not found');
   }
 
-  // Check if user is project member
-  const isMember = await ProjectMember.findOne({
-    userId: req.user._id,
-    projectId: task.projectId,
-  });
-
-  if (!isMember) {
-    return errorResponse(res, 403, 'Access denied. You are not a member of this project');
+  // Check if user is assignee
+  const isAssignee = task.assigneeId && task.assigneeId.toString() === req.user._id.toString();
+  if (isAssignee) {
+    const comments = await Comment.find({ taskId })
+      .populate('userId', 'name email image')
+      .sort({ createdAt: 1 });
+    return successResponse(res, 200, 'Comments retrieved successfully', comments);
   }
 
-  const comments = await Comment.find({ taskId })
-    .populate('userId', 'name email image')
-    .sort({ createdAt: 1 });
+  // Check if user is project team lead
+  const project = await Project.findById(task.projectId._id || task.projectId);
+  const isTeamLead = project.team_lead.toString() === req.user._id.toString();
+  if (isTeamLead) {
+    const comments = await Comment.find({ taskId })
+      .populate('userId', 'name email image')
+      .sort({ createdAt: 1 });
+    return successResponse(res, 200, 'Comments retrieved successfully', comments);
+  }
 
-  return successResponse(res, 200, 'Comments retrieved successfully', comments);
+  // Check if user is workspace admin
+  const workspaceMembership = await WorkspaceMember.findOne({
+    userId: req.user._id,
+    workspaceId: project.workspaceId,
+  });
+
+  if (workspaceMembership && workspaceMembership.role === 'ADMIN') {
+    const comments = await Comment.find({ taskId })
+      .populate('userId', 'name email image')
+      .sort({ createdAt: 1 });
+    return successResponse(res, 200, 'Comments retrieved successfully', comments);
+  }
+
+  return errorResponse(res, 403, 'Access denied. Only the assignee, team lead, or workspace admin can view this task comments');
 });
 
 // @desc    Create new comment
@@ -47,19 +66,29 @@ export const createComment = asyncHandler(async (req, res) => {
   const { taskId, content } = req.body;
 
   // Check if task exists
-  const task = await Task.findById(taskId);
+  const task = await Task.findById(taskId).populate('projectId');
   if (!task) {
     return errorResponse(res, 404, 'Task not found');
   }
 
-  // Check if user is project member
-  const isMember = await ProjectMember.findOne({
-    userId: req.user._id,
-    projectId: task.projectId,
-  });
+  // Check if user is assignee
+  const isAssignee = task.assigneeId && task.assigneeId.toString() === req.user._id.toString();
+  if (!isAssignee) {
+    // Check if user is project team lead
+    const project = await Project.findById(task.projectId._id || task.projectId);
+    const isTeamLead = project.team_lead.toString() === req.user._id.toString();
+    
+    if (!isTeamLead) {
+      // Check if user is workspace admin
+      const workspaceMembership = await WorkspaceMember.findOne({
+        userId: req.user._id,
+        workspaceId: project.workspaceId,
+      });
 
-  if (!isMember) {
-    return errorResponse(res, 403, 'Access denied. You are not a member of this project');
+      if (!workspaceMembership || workspaceMembership.role !== 'ADMIN') {
+        return errorResponse(res, 403, 'Access denied. Only the assignee, team lead, or workspace admin can comment on this task');
+      }
+    }
   }
 
   // Create comment
@@ -76,7 +105,7 @@ export const createComment = asyncHandler(async (req, res) => {
 
   // Send notification to task assignee
   console.log('🎯 Preparing to send notification for comment');
-  const project = await Project.findById(task.projectId);
+  const project = await Project.findById(task.projectId._id || task.projectId);
   
   // Don't send notification if you're commenting on your own task
   if (task.assigneeId && task.assigneeId.toString() !== req.user._id.toString()) {

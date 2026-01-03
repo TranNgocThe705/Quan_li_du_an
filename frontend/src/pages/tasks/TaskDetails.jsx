@@ -47,7 +47,7 @@ export default function TaskDetails() {
     const navigate = useNavigate();
     const { t } = useTranslation();
     
-    const { currentTask: task, loading, comments } = useSelector(state => state.task);
+    const { currentTask: task, loading, error, comments } = useSelector(state => state.task);
 
     const { user } = useSelector(state => state.auth);
     
@@ -56,6 +56,7 @@ export default function TaskDetails() {
     const [assigneeName, setAssigneeName] = useState(null);
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectionReason, setRejectionReason] = useState("");
+    const [permissionError, setPermissionError] = useState(null);
     
     // Real-time features
     const [typingUsers, setTypingUsers] = useState([]);
@@ -74,8 +75,19 @@ export default function TaskDetails() {
 
     useEffect(() => {
         if (taskId) {
-            dispatch(fetchTaskById(taskId));
-            dispatch(fetchComments(taskId));
+            dispatch(fetchTaskById(taskId))
+                .unwrap()
+                .then(() => {
+                    setPermissionError(null);
+                    // Only fetch comments if task can be accessed
+                    dispatch(fetchComments(taskId));
+                })
+                .catch((err) => {
+                    if (err && (err.includes('Access denied') || err.includes('không có quyền'))) {
+                        setPermissionError(err || 'Bạn không có quyền xem chi tiết công việc này');
+                        toast.error(err || 'Bạn không có quyền xem chi tiết công việc này');
+                    }
+                });
         }
     }, [dispatch, taskId]);
 
@@ -281,6 +293,31 @@ export default function TaskDetails() {
             <div className="p-6 text-center text-zinc-900 dark:text-zinc-200">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mt-40"></div>
                 <p className="mt-4">{t('taskDetails.loading')}</p>
+            </div>
+        );
+    }
+
+    if (permissionError || error) {
+        return (
+            <div className="p-6 text-center text-zinc-900 dark:text-zinc-200">
+                <div className="max-w-md mx-auto mt-20 p-8 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <div className="flex justify-center mb-4">
+                        <XCircleIcon className="w-16 h-16 text-red-500" />
+                    </div>
+                    <h2 className="text-2xl font-semibold text-red-600 dark:text-red-400 mb-2">Không có quyền truy cập</h2>
+                    <p className="text-zinc-700 dark:text-zinc-300 mb-6">
+                        {permissionError || error || 'Bạn không có quyền xem chi tiết công việc này'}
+                    </p>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
+                        Chỉ người được giao nhiệm vụ, Team Lead hoặc Workspace Admin mới có thể xem chi tiết công việc này.
+                    </p>
+                    <button 
+                        onClick={() => navigate(`/projectsDetail?id=${projectId}&tab=tasks`)} 
+                        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                        Quay lại danh sách công việc
+                    </button>
+                </div>
             </div>
         );
     }
