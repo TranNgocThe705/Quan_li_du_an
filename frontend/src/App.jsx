@@ -14,6 +14,10 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import GoogleAuthCallback from "./pages/auth/GoogleAuthCallback";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminDashboardOverview from "./pages/admin/AdminDashboardOverview";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import AdminWorkspacesPage from "./pages/admin/AdminWorkspacesPage";
+import AdminProjectsPage from "./pages/admin/AdminProjectsPage";import AdminReportsPage from './pages/admin/AdminReportsPage';import AdminLayout from "./components/admin/AdminLayout";
 import PendingApprovalsPage from "./pages/PendingApprovalsPage";
 import ProtectedRoute from "./components/guards/ProtectedRoute";
 import ProtectedAdminRoute from "./components/guards/ProtectedAdminRoute";
@@ -91,10 +95,19 @@ const App = () => {
                     path="/admin" 
                     element={
                         <ProtectedAdminRoute>
-                            <AdminDashboard />
+                            <AdminLayout />
                         </ProtectedAdminRoute>
-                    } 
-                />
+                    }
+                >
+                    <Route index element={<AdminDashboardOverview />} />
+                    <Route path="users" element={<AdminUsersPage />} />
+                    <Route path="workspaces" element={<AdminWorkspacesPage />} />
+                    <Route path="projects" element={<AdminProjectsPage />} />
+                    <Route path="reports" element={<AdminReportsPage />} />
+                    <Route path="tasks" element={<AdminDashboard />} />
+                    <Route path="activity" element={<AdminDashboard />} />
+                    <Route path="settings" element={<AdminDashboard />} />
+                </Route>
 
                 {/* Catch all - redirect to login if not authenticated, otherwise home */}
                 <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} replace />} />

@@ -11,11 +11,14 @@ export const adminAPI = {
     return API.get(`/admin/users?${query}`);
   },
   getUserDetails: (id) => API.get(`/admin/users/${id}`),
+  updateUser: (id, data) => API.put(`/admin/users/${id}`, data),
   deleteUser: (id) => API.delete(`/admin/users/${id}`),
   getAllWorkspaces: (params = {}) => {
     const query = new URLSearchParams(params);
     return API.get(`/admin/workspaces?${query}`);
   },
+  transferWorkspaceOwnership: (workspaceId, newOwnerId) => 
+    API.put(`/admin/workspaces/${workspaceId}/transfer-ownership`, { newOwnerId }),
   deleteWorkspace: (id) => API.delete(`/admin/workspaces/${id}`),
   getAllProjects: (params = {}) => {
     const query = new URLSearchParams(params);
@@ -27,4 +30,5 @@ export const adminAPI = {
       responseType: 'blob'
     });
   },
+  migrateUsers: () => API.post('/admin/migrate-users'),
 };

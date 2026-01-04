@@ -1,6 +1,6 @@
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const LineChart = ({ data, lines = [], xKey, title }) => {
+const LineChart = ({ data, lines = [], xKey = 'name', dataKey = 'value', color = '#3b82f6', title }) => {
   return (
     <div className="w-full h-full flex flex-col">
       {title && (
@@ -35,18 +35,29 @@ const LineChart = ({ data, lines = [], xKey, title }) => {
               iconType="line"
               wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
             />
-            {lines.map((line, index) => (
+            {lines.length > 0 ? (
+              lines.map((line, index) => (
+                <Line
+                  key={index}
+                  type="monotone"
+                  dataKey={line.dataKey}
+                  stroke={line.color}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                  name={line.name}
+                />
+              ))
+            ) : (
               <Line
-                key={index}
                 type="monotone"
-                dataKey={line.dataKey}
-                stroke={line.color}
+                dataKey={dataKey}
+                stroke={color}
                 strokeWidth={2}
                 dot={{ r: 3 }}
                 activeDot={{ r: 5 }}
-                name={line.name}
               />
-            ))}
+            )}
           </RechartsLineChart>
         </ResponsiveContainer>
       </div>

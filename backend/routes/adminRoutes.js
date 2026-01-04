@@ -8,12 +8,14 @@ import {
   updateUserStatus,
   deleteUser,
   getAllWorkspaces,
+  transferWorkspaceOwnership,
   deleteWorkspace,
   getAllProjects,
   deleteProject,
   getSystemStats,
   getActivityLogs,
   exportReport,
+  migrateUsersData,
 } from '../controllers/adminController.js';
 import { protect, isSuperAdmin, isSystemAdmin } from '../middleware/auth.js';
 
@@ -35,6 +37,7 @@ router.delete('/users/:id', isSuperAdmin, deleteUser);
 
 // Workspace management routes
 router.get('/workspaces', isSystemAdmin, getAllWorkspaces);
+router.put('/workspaces/:id/transfer-ownership', isSystemAdmin, transferWorkspaceOwnership);
 router.delete('/workspaces/:id', isSuperAdmin, deleteWorkspace);
 
 // Project management routes
@@ -49,5 +52,8 @@ router.get('/logs', isSystemAdmin, getActivityLogs);
 
 // Export report
 router.get('/export-report', isSystemAdmin, exportReport);
+
+// Migration endpoint
+router.post('/migrate-users', isSystemAdmin, migrateUsersData);
 
 export default router;

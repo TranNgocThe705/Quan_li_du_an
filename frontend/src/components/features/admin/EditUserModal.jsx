@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Eye, EyeOff } from 'lucide-react';
-import { useDispatch } from 'react-redux';
-import { updateUserInfo } from '../../../features/adminSlice';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { adminAPI } from '../../../api/index.js';
 
 const EditUserModal = ({ user, onClose, onSuccess }) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
     email: '',
     password: '',
     isSystemAdmin: false,
@@ -20,7 +18,7 @@ const EditUserModal = ({ user, onClose, onSuccess }) => {
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || '',
+        fullName: user.fullName || '',
         email: user.email || '',
         password: '',
         isSystemAdmin: user.isSystemAdmin || false,
@@ -31,7 +29,7 @@ const EditUserModal = ({ user, onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name.trim()) {
+    if (!formData.fullName.trim()) {
       toast.error(t('admin.nameRequired'));
       return;
     }
@@ -44,8 +42,7 @@ const EditUserModal = ({ user, onClose, onSuccess }) => {
     setLoading(true);
     try {
       const updateData = {
-        userId: user._id,
-        name: formData.name,
+        fullName: formData.fullName,
         email: formData.email,
         isSystemAdmin: formData.isSystemAdmin,
       };
@@ -55,13 +52,13 @@ const EditUserModal = ({ user, onClose, onSuccess }) => {
         updateData.password = formData.password;
       }
 
-      await dispatch(updateUserInfo(updateData)).unwrap();
+      await adminAPI.updateUser(user._id, updateData);
 
       toast.success(t('admin.userUpdatedSuccess'));
       if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
-      toast.error(error || t('admin.userUpdateError'));
+      toast.error(error.response?.data?.message || t('admin.userUpdateError'));
     } finally {
       setLoading(false);
     }
@@ -94,8 +91,8 @@ const EditUserModal = ({ user, onClose, onSuccess }) => {
             </label>
             <input
               type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-zinc-900 text-gray-900 dark:text-white"
               placeholder={t('admin.enterName')}
               required

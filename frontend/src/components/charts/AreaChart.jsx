@@ -1,6 +1,6 @@
 import { AreaChart as RechartsAreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const AreaChart = ({ data, dataKey, xKey, title, color = '#3b82f6' }) => {
+const AreaChart = ({ data, dataKey = 'value', xKey = 'name', title, color = '#3b82f6' }) => {
   return (
     <div className="w-full h-full flex flex-col">
       {title && (

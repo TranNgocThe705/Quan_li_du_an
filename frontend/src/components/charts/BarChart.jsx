@@ -1,6 +1,6 @@
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const BarChart = ({ data, dataKey, xKey, title, color = '#3b82f6' }) => {
+const BarChart = ({ data, dataKey = 'value', xKey = 'name', title, color = '#3b82f6' }) => {
   return (
     <div className="w-full h-full flex flex-col">
       {title && (

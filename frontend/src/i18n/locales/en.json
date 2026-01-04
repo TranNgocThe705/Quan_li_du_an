@@ -129,6 +129,7 @@
     "todo": "To Do",
     "inProgress": "In Progress",
     "done": "Done",
+    "pendingApproval": "Pending Approval",
     "priority": "Priority",
     "low": "Low",
     "medium": "Medium",
@@ -280,7 +281,10 @@
     "error": "An error occurred",
     "changeLanguage": "Change Language",
     "darkMode": "Dark Mode",
-    "lightMode": "Light Mode"
+    "lightMode": "Light Mode",
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Sign Out"
   },
   "admin": {
     "dashboard": "System Admin Dashboard",

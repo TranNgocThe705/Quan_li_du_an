@@ -8,6 +8,10 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Please provide a name'],
       trim: true,
     },
+    fullName: {
+      type: String,
+      trim: true,
+    },
     email: {
       type: String,
       required: [true, 'Please provide an email'],
@@ -26,15 +30,37 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    avatar: {
+      type: String,
+      default: '',
+    },
     isSystemAdmin: {
       type: Boolean,
       default: false,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   {
     timestamps: true,
   }
 );
+
+// Virtual for fullName if not set
+userSchema.virtual('displayName').get(function() {
+  return this.fullName || this.name;
+});
+
+// Virtual for avatar if not set
+userSchema.virtual('displayAvatar').get(function() {
+  return this.avatar || this.image;
+});
+
+// Ensure virtuals are included in JSON
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {

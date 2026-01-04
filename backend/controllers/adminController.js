@@ -436,6 +436,53 @@ export const deleteWorkspace = asyncHandler(async (req, res) => {
   return successResponse(res, 200, 'Workspace and all related data deleted successfully');
 });
 
+// @desc    Transfer workspace ownership
+// @route   PUT /api/admin/workspaces/:id/transfer-ownership
+// @access  Private (System Admin)
+export const transferWorkspaceOwnership = asyncHandler(async (req, res) => {
+  const { newOwnerId } = req.body;
+  const workspaceId = req.params.id;
+
+  if (!newOwnerId) {
+    return errorResponse(res, 400, 'New owner ID is required');
+  }
+
+  const workspace = await Workspace.findById(workspaceId);
+  if (!workspace) {
+    return errorResponse(res, 404, 'Workspace not found');
+  }
+
+  const newOwner = await User.findById(newOwnerId);
+  if (!newOwner) {
+    return errorResponse(res, 404, 'New owner not found');
+  }
+
+  // Update workspace owner
+  workspace.ownerId = newOwnerId;
+  await workspace.save();
+
+  // Ensure new owner is a member of the workspace with admin role
+  const existingMember = await WorkspaceMember.findOne({
+    userId: newOwnerId,
+    workspaceId: workspaceId
+  });
+
+  if (existingMember) {
+    existingMember.role = 'admin';
+    await existingMember.save();
+  } else {
+    await WorkspaceMember.create({
+      userId: newOwnerId,
+      workspaceId: workspaceId,
+      role: 'admin'
+    });
+  }
+
+  return successResponse(res, 200, 'Workspace ownership transferred successfully', {
+    workspace
+  });
+});
+
 // @desc    Get all projects
 // @route   GET /api/admin/projects
 // @access  Private (System Admin)
@@ -706,4 +753,51 @@ export const exportReport = asyncHandler(async (req, res) => {
     await workbook.xlsx.write(res);
     res.end();
   }
+});
+
+// @desc    Migrate users data - Add isActive, fullName, avatar fields
+// @route   POST /api/admin/migrate-users
+// @access  Private (System Admin)
+export const migrateUsersData = asyncHandler(async (req, res) => {
+  // Update all users that don't have isActive field
+  const activeResult = await User.updateMany(
+    { isActive: { $exists: false } },
+    { $set: { isActive: true } }
+  );
+
+  // Update fullName from name if fullName doesn't exist
+  const users = await User.find({ 
+    $or: [
+      { fullName: { $exists: false } },
+      { avatar: { $exists: false } }
+    ]
+  });
+
+  let fullNameCount = 0;
+  let avatarCount = 0;
+
+  for (const user of users) {
+    const updates = {};
+    
+    if (!user.fullName && user.name) {
+      updates.fullName = user.name;
+      fullNameCount++;
+    }
+    
+    if (!user.avatar && user.image) {
+      updates.avatar = user.image;
+      avatarCount++;
+    }
+    
+    if (Object.keys(updates).length > 0) {
+      await User.findByIdAndUpdate(user._id, { $set: updates });
+    }
+  }
+
+  return successResponse(res, 200, 'Users migration completed successfully', {
+    isActiveUpdated: activeResult.modifiedCount,
+    fullNameUpdated: fullNameCount,
+    avatarUpdated: avatarCount,
+    totalUsers: await User.countDocuments()
+  });
 });
