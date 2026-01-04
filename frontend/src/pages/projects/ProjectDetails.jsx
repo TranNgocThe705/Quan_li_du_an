@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeftIcon, PlusIcon, SettingsIcon, BarChart3Icon, CalendarIcon, FileStackIcon, ZapIcon, Sparkles, Kanban } from "lucide-react";
+import { ArrowLeftIcon, PlusIcon, SettingsIcon, BarChart3Icon, CalendarIcon, FileStackIcon, ZapIcon, Sparkles, Kanban, LockIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import ProjectAnalytics from "../../components/features/projects/ProjectAnalytics";
@@ -25,9 +25,13 @@ export default function ProjectDetail() {
     const { t } = useTranslation();
     const { currentProject: project, loading } = useSelector(state => state.project);
     const { tasks } = useSelector(state => state.task);
+    const { user } = useSelector(state => state.auth);
 
     const [showCreateTask, setShowCreateTask] = useState(false);
     const [activeTab, setActiveTab] = useState(tab || "tasks");
+
+    // Check if current user is project team lead (creator/owner)
+    const isProjectCreator = project && user && (project.team_lead?._id === user._id || project.team_lead === user._id);
 
     useEffect(() => {
         if (tab) setActiveTab(tab);
@@ -127,10 +131,14 @@ export default function ProjectDetail() {
                         { key: "sprint-board", label: t('projectDetail.sprintBoard') || "Sprint Board", icon: Kanban },
                         { key: "calendar", label: t('projectDetail.calendar'), icon: CalendarIcon },
                         { key: "analytics", label: t('projectDetail.analytics'), icon: BarChart3Icon },
-                        { key: "ai-insights", label: "AI Insights", icon: Sparkles },
+                        ...(isProjectCreator ? [{ key: "ai-insights", label: "AI Insights", icon: Sparkles }] : []),
                         { key: "settings", label: t('projectDetail.settings'), icon: SettingsIcon },
                     ].map((tabItem) => (
-                        <button key={tabItem.key} onClick={() => { setActiveTab(tabItem.key); setSearchParams({ id: id, tab: tabItem.key }) }} className={`flex items-center gap-2 px-4 py-2 text-sm transition-all ${activeTab === tabItem.key ? "bg-zinc-100 dark:bg-zinc-800/80" : "hover:bg-zinc-50 dark:hover:bg-zinc-700"}`} >
+                        <button 
+                            key={tabItem.key} 
+                            onClick={() => { setActiveTab(tabItem.key); setSearchParams({ id: id, tab: tabItem.key }) }} 
+                            className={`flex items-center gap-2 px-4 py-2 text-sm transition-all ${activeTab === tabItem.key ? "bg-zinc-100 dark:bg-zinc-800/80" : "hover:bg-zinc-50 dark:hover:bg-zinc-700"}`} 
+                        >
                             <tabItem.icon className="size-3.5" />
                             {tabItem.label}
                         </button>
@@ -154,9 +162,23 @@ export default function ProjectDetail() {
                         </div>
                     )}
                     {activeTab === "ai-insights" && (
-                        <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
-                            <AIProjectInsights projectId={id} />
-                        </div>
+                        isProjectCreator ? (
+                            <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
+                                <AIProjectInsights projectId={id} />
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center py-12">
+                                <div className="text-center max-w-md">
+                                    <LockIcon className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
+                                        Không có quyền truy cập
+                                    </h3>
+                                    <p className="text-zinc-600 dark:text-zinc-400">
+                                        Chỉ người tạo dự án mới có thể sử dụng chức năng AI Insights. Vui lòng liên hệ với chủ dự án để được cấp quyền.
+                                    </p>
+                                </div>
+                            </div>
+                        )
                     )}
                     {activeTab === "calendar" && (
                         <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
